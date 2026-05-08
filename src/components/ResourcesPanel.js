@@ -21,7 +21,7 @@ import LinkIcon from "@mui/icons-material/Link";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 const allowedFileTypes = [
   "application/pdf",
@@ -111,7 +111,7 @@ function ResourcesPanel({ groupId, userId }) {
     }
 
     if (selectedFile.size > MAX_FILE_SIZE) {
-      alert("File must be less than 10 MB.");
+      alert("File must be less than 50 MB.");
       event.target.value = "";
       return;
     }
@@ -277,7 +277,7 @@ function ResourcesPanel({ groupId, userId }) {
                   />
                 </Button>
                 <Typography variant="caption" color="text.secondary" display="block" mt={1}>
-                  Allowed: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG, WEBP. Max 10 MB.
+                  Allowed: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG, WEBP. Max 50 MB.
                 </Typography>
                 {form.file && (
                   <Typography variant="body2" color="text.secondary" mt={1}>
