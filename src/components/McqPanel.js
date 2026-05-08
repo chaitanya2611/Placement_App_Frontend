@@ -21,6 +21,8 @@ import AddIcon from "@mui/icons-material/Add";
 
 function McqPanel({ groupId }) {
   const [questions, setQuestions] = useState([]);
+  const [topics, setTopics] = useState([]);
+  const [selectedTopic, setSelectedTopic] = useState("All");
   const [stats, setStats] = useState({
     totalAttempts: 0,
     correctAttempts: 0,
@@ -30,6 +32,7 @@ function McqPanel({ groupId }) {
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
+    topic: "General",
     questionText: "",
     options: ["", "", "", ""],
     correctOption: 0,
@@ -39,10 +42,20 @@ function McqPanel({ groupId }) {
 
   const loadQuestions = useCallback(async () => {
     try {
-      const res = await api.get(`/questions/${groupId}`);
+      const query = selectedTopic !== "All" ? `?topic=${encodeURIComponent(selectedTopic)}` : "";
+      const res = await api.get(`/questions/${groupId}${query}`);
       setQuestions(res.data);
     } catch (error) {
       alert(error.response?.data?.message || "Failed to load MCQs");
+    }
+  }, [groupId, selectedTopic]);
+
+  const loadTopics = useCallback(async () => {
+    try {
+      const res = await api.get(`/questions/topics/${groupId}`);
+      setTopics(res.data);
+    } catch (error) {
+      console.log(error);
     }
   }, [groupId]);
 
@@ -58,7 +71,8 @@ function McqPanel({ groupId }) {
   useEffect(() => {
     loadQuestions();
     loadStats();
-  }, [loadQuestions, loadStats]);
+    loadTopics();
+  }, [loadQuestions, loadStats, loadTopics]);
 
   const handleOptionChange = (index, value) => {
     const updatedOptions = [...form.options];
@@ -68,6 +82,7 @@ function McqPanel({ groupId }) {
 
   const resetForm = () => {
     setForm({
+      topic: "General",
       questionText: "",
       options: ["", "", "", ""],
       correctOption: 0,
@@ -92,6 +107,7 @@ function McqPanel({ groupId }) {
 
     try {
       const formData = new FormData();
+      formData.append("topic", form.topic.trim() || "General");
       formData.append("questionText", form.questionText);
       formData.append("options", JSON.stringify(form.options));
       formData.append("correctOption", String(form.correctOption));
@@ -108,6 +124,7 @@ function McqPanel({ groupId }) {
       });
 
       resetForm();
+      await loadTopics();
       await loadQuestions();
       await loadStats();
     } catch (error) {
@@ -192,7 +209,7 @@ function McqPanel({ groupId }) {
                 Group MCQs
               </Typography>
               <Typography color="text.secondary">
-                Select an answer, submit it, and track your practice score.
+                Select an answer, submit it, and practice topic-wise questions.
               </Typography>
             </Box>
 
@@ -209,7 +226,7 @@ function McqPanel({ groupId }) {
 
       <Card sx={{ borderRadius: 4 }}>
         <CardContent>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "stretch", sm: "center" }}>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ xs: "stretch", md: "center" }}>
             <Box sx={{ flex: 1 }}>
               <Typography fontWeight="bold">Your Score</Typography>
               <Typography variant="body2" color="text.secondary">
@@ -226,6 +243,20 @@ function McqPanel({ groupId }) {
               color={(stats.scorePercentage || 0) >= 60 ? "success" : "warning"}
               sx={{ fontWeight: "bold" }}
             />
+            <TextField
+              select
+              label="Filter Topic"
+              value={selectedTopic}
+              onChange={(event) => setSelectedTopic(event.target.value)}
+              sx={{ minWidth: 180 }}
+            >
+              <MenuItem value="All">All Topics</MenuItem>
+              {topics.map((topic) => (
+                <MenuItem key={topic} value={topic}>
+                  {topic}
+                </MenuItem>
+              ))}
+            </TextField>
           </Stack>
         </CardContent>
       </Card>
@@ -236,6 +267,15 @@ function McqPanel({ groupId }) {
             <Typography variant="h6" fontWeight="bold" mb={2}>
               Create MCQ
             </Typography>
+
+            <TextField
+              fullWidth
+              label="Topic"
+              placeholder="Example: DSA, DBMS, OS, Aptitude"
+              value={form.topic}
+              onChange={(event) => setForm({ ...form, topic: event.target.value })}
+              sx={{ mb: 2 }}
+            />
 
             <TextField
               fullWidth
@@ -323,7 +363,7 @@ function McqPanel({ groupId }) {
         <Card sx={{ borderRadius: 4 }}>
           <CardContent>
             <Typography color="text.secondary">
-              No MCQs added yet. Add the first question for this group.
+              No MCQs found for this topic.
             </Typography>
           </CardContent>
         </Card>
@@ -335,9 +375,12 @@ function McqPanel({ groupId }) {
             <Card key={question._id} sx={{ borderRadius: 4 }}>
               <CardContent>
                 <Stack direction="row" justifyContent="space-between" spacing={1} mb={1}>
-                  <Typography fontWeight="bold">
-                    Q{index + 1}. {question.questionText}
-                  </Typography>
+                  <Box>
+                    <Chip size="small" label={question.topic || "General"} color="primary" sx={{ mb: 1 }} />
+                    <Typography fontWeight="bold">
+                      Q{index + 1}. {question.questionText}
+                    </Typography>
+                  </Box>
                   {attempted && (
                     <Chip
                       size="small"
