@@ -222,7 +222,7 @@ function GroupWorkspace() {
 
         {activeTab === 3 && (
           <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
-            <MeetingsPanel groupId={groupId} />
+            <MeetingsPanel groupId={groupId} isGroupCreator={isCreator} />
           </Box>
         )}
 
