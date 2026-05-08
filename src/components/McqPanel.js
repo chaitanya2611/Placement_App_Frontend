@@ -19,7 +19,19 @@ import {
 
 import AddIcon from "@mui/icons-material/Add";
 
+const emptyMcqForm = {
+  topic: "General",
+  questionText: "",
+  options: ["", "", "", ""],
+  correctOption: 0,
+  explanation: "",
+  questionImage: null,
+};
+
 function McqPanel({ groupId }) {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const userId = user?.id || user?._id;
+
   const [questions, setQuestions] = useState([]);
   const [topics, setTopics] = useState([]);
   const [selectedTopic, setSelectedTopic] = useState("All");
@@ -31,14 +43,8 @@ function McqPanel({ groupId }) {
   });
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    topic: "General",
-    questionText: "",
-    options: ["", "", "", ""],
-    correctOption: 0,
-    explanation: "",
-    questionImage: null,
-  });
+  const [editingQuestion, setEditingQuestion] = useState(null);
+  const [form, setForm] = useState(emptyMcqForm);
 
   const loadQuestions = useCallback(async () => {
     try {
@@ -68,6 +74,12 @@ function McqPanel({ groupId }) {
     }
   }, [groupId]);
 
+  const refreshMcqData = async () => {
+    await loadTopics();
+    await loadQuestions();
+    await loadStats();
+  };
+
   useEffect(() => {
     loadQuestions();
     loadStats();
@@ -81,18 +93,41 @@ function McqPanel({ groupId }) {
   };
 
   const resetForm = () => {
-    setForm({
-      topic: "General",
-      questionText: "",
-      options: ["", "", "", ""],
-      correctOption: 0,
-      explanation: "",
-      questionImage: null,
-    });
+    setForm(emptyMcqForm);
+    setEditingQuestion(null);
     setShowForm(false);
   };
 
-  const handleCreateMcq = async (event) => {
+  const startCreateMcq = () => {
+    if (showForm && !editingQuestion) {
+      resetForm();
+      return;
+    }
+
+    setForm(emptyMcqForm);
+    setEditingQuestion(null);
+    setShowForm(true);
+  };
+
+  const startEditMcq = (question) => {
+    setEditingQuestion(question);
+    setForm({
+      topic: question.topic || "General",
+      questionText: question.questionText || "",
+      options: question.options || ["", "", "", ""],
+      correctOption: Number(question.correctOption) || 0,
+      explanation: question.explanation || "",
+      questionImage: null,
+    });
+    setShowForm(true);
+  };
+
+  const isQuestionCreator = (question) => {
+    const creatorId = question.createdBy?._id || question.createdBy;
+    return creatorId === userId;
+  };
+
+  const handleSaveMcq = async (event) => {
     event.preventDefault();
 
     if (!form.questionText.trim()) {
@@ -106,29 +141,58 @@ function McqPanel({ groupId }) {
     }
 
     try {
-      const formData = new FormData();
-      formData.append("topic", form.topic.trim() || "General");
-      formData.append("questionText", form.questionText);
-      formData.append("options", JSON.stringify(form.options));
-      formData.append("correctOption", String(form.correctOption));
-      formData.append("explanation", form.explanation);
+      if (editingQuestion) {
+        const confirmed = window.confirm(
+          "Editing this MCQ will reset all attempts for this question. Continue?",
+        );
 
-      if (form.questionImage) {
-        formData.append("questionImage", form.questionImage);
+        if (!confirmed) return;
+
+        await api.put(`/questions/single/${editingQuestion._id}`, {
+          topic: form.topic.trim() || "General",
+          questionText: form.questionText,
+          options: form.options,
+          correctOption: form.correctOption,
+          explanation: form.explanation,
+        });
+      } else {
+        const formData = new FormData();
+        formData.append("topic", form.topic.trim() || "General");
+        formData.append("questionText", form.questionText);
+        formData.append("options", JSON.stringify(form.options));
+        formData.append("correctOption", String(form.correctOption));
+        formData.append("explanation", form.explanation);
+
+        if (form.questionImage) {
+          formData.append("questionImage", form.questionImage);
+        }
+
+        await api.post(`/questions/${groupId}`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
       }
 
-      await api.post(`/questions/${groupId}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
       resetForm();
-      await loadTopics();
-      await loadQuestions();
-      await loadStats();
+      await refreshMcqData();
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to add MCQ");
+      alert(
+        error.response?.data?.message ||
+          (editingQuestion ? "Failed to update MCQ" : "Failed to add MCQ"),
+      );
+    }
+  };
+
+  const handleDeleteMcq = async (questionId) => {
+    const confirmed = window.confirm("Delete this MCQ? This will also delete all attempts for it.");
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/questions/single/${questionId}`);
+      await refreshMcqData();
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to delete MCQ");
     }
   };
 
@@ -216,7 +280,7 @@ function McqPanel({ groupId }) {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => setShowForm((prev) => !prev)}
+              onClick={startCreateMcq}
             >
               Add MCQ
             </Button>
@@ -263,9 +327,9 @@ function McqPanel({ groupId }) {
 
       {showForm && (
         <Card sx={{ borderRadius: 4 }}>
-          <CardContent component="form" onSubmit={handleCreateMcq}>
+          <CardContent component="form" onSubmit={handleSaveMcq}>
             <Typography variant="h6" fontWeight="bold" mb={2}>
-              Create MCQ
+              {editingQuestion ? "Edit MCQ" : "Create MCQ"}
             </Typography>
 
             <TextField
@@ -289,21 +353,31 @@ function McqPanel({ groupId }) {
               sx={{ mb: 2 }}
             />
 
-            <Button component="label" variant="outlined" sx={{ mb: 2 }}>
-              Upload Question Image
-              <input
-                hidden
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(event) =>
-                  setForm({ ...form, questionImage: event.target.files[0] })
-                }
-              />
-            </Button>
+            {!editingQuestion && (
+              <>
+                <Button component="label" variant="outlined" sx={{ mb: 2 }}>
+                  Upload Question Image
+                  <input
+                    hidden
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) =>
+                      setForm({ ...form, questionImage: event.target.files[0] })
+                    }
+                  />
+                </Button>
 
-            {form.questionImage && (
+                {form.questionImage && (
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    Selected: {form.questionImage.name}
+                  </Typography>
+                )}
+              </>
+            )}
+
+            {editingQuestion && editingQuestion.questionImageUrl && (
               <Typography variant="body2" color="text.secondary" mb={2}>
-                Selected: {form.questionImage.name}
+                Existing image will remain unchanged.
               </Typography>
             )}
 
@@ -352,7 +426,7 @@ function McqPanel({ groupId }) {
             <Stack direction="row" spacing={1} justifyContent="flex-end" mt={2}>
               <Button onClick={resetForm}>Cancel</Button>
               <Button type="submit" variant="contained">
-                Save MCQ
+                {editingQuestion ? "Update MCQ" : "Save MCQ"}
               </Button>
             </Stack>
           </CardContent>
@@ -370,6 +444,7 @@ function McqPanel({ groupId }) {
       ) : (
         questions.map((question, index) => {
           const attempted = Boolean(question.userAttempt);
+          const canManage = isQuestionCreator(question);
 
           return (
             <Card key={question._id} sx={{ borderRadius: 4 }}>
@@ -381,14 +456,39 @@ function McqPanel({ groupId }) {
                       Q{index + 1}. {question.questionText}
                     </Typography>
                   </Box>
-                  {attempted && (
-                    <Chip
-                      size="small"
-                      label={question.userAttempt.isCorrect ? "Correct" : "Wrong"}
-                      color={question.userAttempt.isCorrect ? "success" : "error"}
-                    />
-                  )}
+                  <Stack direction="row" spacing={1} alignItems="flex-start">
+                    {attempted && (
+                      <Chip
+                        size="small"
+                        label={question.userAttempt.isCorrect ? "Correct" : "Wrong"}
+                        color={question.userAttempt.isCorrect ? "success" : "error"}
+                      />
+                    )}
+                    {canManage && (
+                      <Chip size="small" label="Your MCQ" color="secondary" />
+                    )}
+                  </Stack>
                 </Stack>
+
+                {canManage && (
+                  <Stack direction="row" spacing={1} mb={2}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => startEditMcq(question)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      onClick={() => handleDeleteMcq(question._id)}
+                    >
+                      Delete
+                    </Button>
+                  </Stack>
+                )}
 
                 {question.questionImageUrl && (
                   <Box
