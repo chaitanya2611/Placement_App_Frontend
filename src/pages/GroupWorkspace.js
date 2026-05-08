@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 import GroupChat from "../components/GroupChat";
@@ -43,36 +43,29 @@ function GroupWorkspace() {
     questionImage: null,
   });
 
-  const loadGroup = async () => {
-    const res = await api.get("/groups/my-groups");
-    const foundGroup = res.data.find((item) => item._id === groupId);
-
-    if (!foundGroup) {
-      alert("You are not a member of this group");
-      navigate("/dashboard");
-      return null;
-    }
-
-    setGroup(foundGroup);
-    return foundGroup;
-  };
-
-  const loadQuestions = async () => {
+  const loadQuestions = useCallback(async () => {
     try {
       const res = await api.get(`/questions/${groupId}`);
       setQuestions(res.data);
     } catch (error) {
       console.log(error);
     }
-  };
+  }, [groupId]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const foundGroup = await loadGroup();
-        if (foundGroup) {
-          await loadQuestions();
+        const groupRes = await api.get("/groups/my-groups");
+        const foundGroup = groupRes.data.find((item) => item._id === groupId);
+
+        if (!foundGroup) {
+          alert("You are not a member of this group");
+          navigate("/dashboard");
+          return;
         }
+
+        setGroup(foundGroup);
+        await loadQuestions();
       } catch (error) {
         alert(error.response?.data?.message || "Failed to open group");
         navigate("/dashboard");
@@ -82,7 +75,7 @@ function GroupWorkspace() {
     };
 
     loadData();
-  }, [groupId, navigate]);
+  }, [groupId, navigate, loadQuestions]);
 
   const handleOptionChange = (index, value) => {
     const updatedOptions = [...mcqForm.options];
