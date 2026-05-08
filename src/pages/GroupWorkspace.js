@@ -15,6 +15,7 @@ import {
   Divider,
   Grid,
   IconButton,
+  MenuItem,
   Paper,
   Stack,
   Tab,
@@ -115,7 +116,7 @@ function GroupWorkspace() {
       const formData = new FormData();
       formData.append("questionText", mcqForm.questionText);
       formData.append("options", JSON.stringify(mcqForm.options));
-      formData.append("correctOption", mcqForm.correctOption);
+      formData.append("correctOption", String(mcqForm.correctOption));
       formData.append("explanation", mcqForm.explanation);
 
       if (mcqForm.questionImage) {
@@ -154,8 +155,8 @@ function GroupWorkspace() {
   if (!group) return null;
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#f8fafc" }}>
-      <AppBar position="sticky" elevation={0} sx={{ bgcolor: "#075e54" }}>
+    <Box sx={{ height: "100vh", bgcolor: "#f8fafc", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <AppBar position="static" elevation={0} sx={{ bgcolor: "#075e54", flexShrink: 0 }}>
         <Container maxWidth="lg">
           <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 1.2 }}>
             <IconButton onClick={() => navigate("/dashboard")} sx={{ color: "white" }}>
@@ -178,8 +179,8 @@ function GroupWorkspace() {
         </Container>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ py: 3 }}>
-        <Paper sx={{ borderRadius: 4, overflow: "hidden", mb: 3 }}>
+      <Container maxWidth="lg" sx={{ py: 2, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <Paper sx={{ borderRadius: 4, overflow: "hidden", mb: 2, flexShrink: 0 }}>
           <Tabs
             value={activeTab}
             onChange={(event, value) => setActiveTab(value)}
@@ -194,13 +195,14 @@ function GroupWorkspace() {
         </Paper>
 
         {activeTab === 0 && (
-          <Paper sx={{ borderRadius: 4, overflow: "hidden", height: "calc(100vh - 190px)" }}>
+          <Paper sx={{ borderRadius: 4, overflow: "hidden", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
             <GroupChat group={group} embedded />
           </Paper>
         )}
 
         {activeTab === 1 && (
-          <Stack spacing={3}>
+          <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
+            <Stack spacing={3}>
             <Card sx={{ borderRadius: 4 }}>
               <CardContent>
                 <Stack
@@ -293,13 +295,12 @@ function GroupWorkspace() {
                         correctOption: Number(event.target.value),
                       })
                     }
-                    SelectProps={{ native: true }}
                     sx={{ mt: 2 }}
                   >
                     {[0, 1, 2, 3].map((option) => (
-                      <option key={option} value={option}>
+                      <MenuItem key={option} value={option}>
                         Option {option + 1}
-                      </option>
+                      </MenuItem>
                     ))}
                   </TextField>
 
@@ -396,10 +397,12 @@ function GroupWorkspace() {
                 </Card>
               ))
             )}
-          </Stack>
+            </Stack>
+          </Box>
         )}
 
         {activeTab === 2 && (
+          <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
           <Card sx={{ borderRadius: 4 }}>
             <CardContent>
               <Typography variant="h5" fontWeight="bold" mb={2}>
@@ -425,9 +428,11 @@ function GroupWorkspace() {
               </Grid>
             </CardContent>
           </Card>
+          </Box>
         )}
 
         {activeTab === 3 && (
+          <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
           <Card sx={{ borderRadius: 4 }}>
             <CardContent>
               <Typography variant="h5" fontWeight="bold">
@@ -438,6 +443,7 @@ function GroupWorkspace() {
               </Typography>
             </CardContent>
           </Card>
+          </Box>
         )}
       </Container>
     </Box>
