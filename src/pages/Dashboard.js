@@ -18,7 +18,6 @@ import {
   DialogActions,
   Grid,
   Chip,
-  Divider,
   Stack,
 } from "@mui/material";
 
@@ -30,7 +29,6 @@ function Dashboard() {
 
   const [myGroups, setMyGroups] = useState([]);
   const [allGroups, setAllGroups] = useState([]);
-  const [requests, setRequests] = useState({});
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -70,19 +68,6 @@ function Dashboard() {
     }
   };
 
-  const fetchRequests = async (groupId) => {
-    try {
-      const res = await api.get(`/groups/${groupId}/requests`);
-
-      setRequests((prev) => ({
-        ...prev,
-        [groupId]: res.data,
-      }));
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const loadData = useCallback(async () => {
     await fetchMyGroups();
     await fetchAllGroups();
@@ -91,16 +76,6 @@ function Dashboard() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  useEffect(() => {
-    if (!userId) return;
-
-    myGroups.forEach((group) => {
-      if (group.creator?._id === userId) {
-        fetchRequests(group._id);
-      }
-    });
-  }, [myGroups, userId]);
 
   const handleCreateGroup = async (e) => {
     e.preventDefault();
@@ -127,29 +102,6 @@ function Dashboard() {
       fetchAllGroups();
     } catch (error) {
       alert(error.response?.data?.message || "Failed to send request");
-    }
-  };
-
-  const handleAccept = async (groupId, requestUserId) => {
-    try {
-      await api.put(`/groups/${groupId}/requests/${requestUserId}/accept`);
-      alert("Request accepted");
-
-      loadData();
-      fetchRequests(groupId);
-    } catch (error) {
-      alert(error.response?.data?.message || "Failed to accept request");
-    }
-  };
-
-  const handleReject = async (groupId, requestUserId) => {
-    try {
-      await api.put(`/groups/${groupId}/requests/${requestUserId}/reject`);
-      alert("Request rejected");
-
-      fetchRequests(groupId);
-    } catch (error) {
-      alert(error.response?.data?.message || "Failed to reject request");
     }
   };
 
@@ -199,8 +151,8 @@ function Dashboard() {
           </Typography>
 
           <Typography color="text.secondary" mb={4}>
-            Create subject-wise groups, join groups created by others, and
-            manage join requests.
+            Create subject-wise groups, join groups created by others, and open
+            each group workspace for chat, MCQs, members, and resources.
           </Typography>
 
           <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3 }}>
@@ -270,75 +222,6 @@ function Dashboard() {
                       >
                         Open Workspace
                       </Button>
-
-                      {isCreator(group) && (
-                        <>
-                          <Divider sx={{ my: 2 }} />
-
-                          <Typography fontWeight="bold" mb={1}>
-                            Join Requests
-                          </Typography>
-
-                          {!requests[group._id] ||
-                          requests[group._id].length === 0 ? (
-                            <Typography color="text.secondary" variant="body2">
-                              No pending requests
-                            </Typography>
-                          ) : (
-                            requests[group._id].map((request) => (
-                              <Box
-                                key={request.user._id}
-                                sx={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                  mt: 1,
-                                  p: 1.5,
-                                  bgcolor: "#f1f5f9",
-                                  borderRadius: 2,
-                                }}
-                              >
-                                <Box>
-                                  <Typography fontWeight="bold">
-                                    {request.user.name}
-                                  </Typography>
-
-                                  <Typography
-                                    variant="body2"
-                                    color="text.secondary"
-                                  >
-                                    {request.user.email}
-                                  </Typography>
-                                </Box>
-
-                                <Stack direction="row" spacing={1}>
-                                  <Button
-                                    size="small"
-                                    variant="contained"
-                                    color="success"
-                                    onClick={() =>
-                                      handleAccept(group._id, request.user._id)
-                                    }
-                                  >
-                                    Accept
-                                  </Button>
-
-                                  <Button
-                                    size="small"
-                                    variant="outlined"
-                                    color="error"
-                                    onClick={() =>
-                                      handleReject(group._id, request.user._id)
-                                    }
-                                  >
-                                    Reject
-                                  </Button>
-                                </Stack>
-                              </Box>
-                            ))
-                          )}
-                        </>
-                      )}
                     </CardContent>
                   </Card>
                 </Grid>
