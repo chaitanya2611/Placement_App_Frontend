@@ -5,6 +5,7 @@ import GroupChat from "../components/GroupChat";
 import ResourcesPanel from "../components/ResourcesPanel";
 import McqPanel from "../components/McqPanel";
 import MembersPanel from "../components/MembersPanel";
+import LeaderboardPanel from "../components/LeaderboardPanel";
 
 import {
   AppBar,
@@ -132,6 +133,7 @@ function GroupWorkspace() {
           >
             <Tab label="Chat" />
             <Tab label="MCQs" />
+            <Tab label="Leaderboard" />
             <Tab label="Members" />
             <Tab label="Resources" />
           </Tabs>
@@ -160,6 +162,12 @@ function GroupWorkspace() {
 
         {activeTab === 2 && (
           <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
+            <LeaderboardPanel groupId={groupId} />
+          </Box>
+        )}
+
+        {activeTab === 3 && (
+          <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
             <MembersPanel
               group={group}
               groupId={groupId}
@@ -168,7 +176,7 @@ function GroupWorkspace() {
           </Box>
         )}
 
-        {activeTab === 3 && (
+        {activeTab === 4 && (
           <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
             <ResourcesPanel groupId={groupId} userId={userId} />
           </Box>
