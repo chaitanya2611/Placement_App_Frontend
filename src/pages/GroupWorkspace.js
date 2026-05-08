@@ -6,6 +6,7 @@ import ResourcesPanel from "../components/ResourcesPanel";
 import McqPanel from "../components/McqPanel";
 import QuizPanel from "../components/QuizPanel";
 import MeetingsPanel from "../components/MeetingsPanel";
+import CodingPanel from "../components/CodingPanel";
 import MembersPanel from "../components/MembersPanel";
 import LeaderboardPanel from "../components/LeaderboardPanel";
 
@@ -14,12 +15,14 @@ import {
   Avatar,
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Container,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   IconButton,
   Paper,
   Stack,
@@ -44,6 +47,7 @@ function GroupWorkspace() {
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
+    codingEnabled: false,
   });
 
   const isCreator = (group?.creator?._id || group?.creator) === userId;
@@ -81,6 +85,7 @@ function GroupWorkspace() {
     setEditForm({
       title: group.title || "",
       description: group.description || "",
+      codingEnabled: Boolean(group.codingEnabled),
     });
     setEditOpen(true);
   };
@@ -90,6 +95,7 @@ function GroupWorkspace() {
     setEditForm({
       title: "",
       description: "",
+      codingEnabled: false,
     });
   };
 
@@ -101,7 +107,10 @@ function GroupWorkspace() {
 
     try {
       await api.put(`/groups/${groupId}`, editForm);
-      await loadGroup();
+      const updatedGroup = await loadGroup();
+      if (!updatedGroup?.codingEnabled && activeTab === 4) {
+        setActiveTab(0);
+      }
       handleCloseEdit();
     } catch (error) {
       alert(error.response?.data?.message || "Failed to update group");
@@ -125,6 +134,11 @@ function GroupWorkspace() {
   }
 
   if (!group) return null;
+
+  const codingEnabled = Boolean(group.codingEnabled);
+  const leaderboardTabIndex = codingEnabled ? 5 : 4;
+  const membersTabIndex = codingEnabled ? 6 : 5;
+  const resourcesTabIndex = codingEnabled ? 7 : 6;
 
   return (
     <Box
@@ -187,6 +201,7 @@ function GroupWorkspace() {
             <Tab label="MCQs" />
             <Tab label="Quizzes" />
             <Tab label="Meetings" />
+            {codingEnabled && <Tab label="Coding" />}
             <Tab label="Leaderboard" />
             <Tab label="Members" />
             <Tab label="Resources" />
@@ -226,13 +241,19 @@ function GroupWorkspace() {
           </Box>
         )}
 
-        {activeTab === 4 && (
+        {codingEnabled && activeTab === 4 && (
+          <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
+            <CodingPanel groupId={groupId} />
+          </Box>
+        )}
+
+        {activeTab === leaderboardTabIndex && (
           <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
             <LeaderboardPanel groupId={groupId} />
           </Box>
         )}
 
-        {activeTab === 5 && (
+        {activeTab === membersTabIndex && (
           <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
             <MembersPanel
               group={group}
@@ -243,7 +264,7 @@ function GroupWorkspace() {
           </Box>
         )}
 
-        {activeTab === 6 && (
+        {activeTab === resourcesTabIndex && (
           <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
             <ResourcesPanel groupId={groupId} userId={userId} />
           </Box>
@@ -273,6 +294,21 @@ function GroupWorkspace() {
             }
             sx={{ mt: 2 }}
           />
+          <FormControlLabel
+            sx={{ mt: 2 }}
+            control={
+              <Checkbox
+                checked={editForm.codingEnabled}
+                onChange={(event) =>
+                  setEditForm({ ...editForm, codingEnabled: event.target.checked })
+                }
+              />
+            }
+            label="Enable Coding Interface for this group"
+          />
+          <Typography variant="body2" color="text.secondary">
+            Coding is optional. Existing groups will show the Coding tab only after this is enabled by the group creator.
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseEdit}>Cancel</Button>
