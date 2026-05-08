@@ -29,8 +29,9 @@ function CodingPanel({ groupId }) {
   const [activeProblem, setActiveProblem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [code, setCode] = useState("");
-  const [manualOutputs, setManualOutputs] = useState([""]);
   const [runResult, setRunResult] = useState(null);
+  const [loadingRun, setLoadingRun] = useState(false);
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -112,7 +113,6 @@ function CodingPanel({ groupId }) {
       const res = await api.get(`/coding/problems/${problemId}`);
       setActiveProblem(res.data);
       setCode(res.data.userSubmission?.code || res.data.starterCode || "# Write your Python solution here\n");
-      setManualOutputs((res.data.testCases || []).map(() => ""));
       setRunResult(null);
       setShowForm(false);
     } catch (error) {
@@ -123,7 +123,6 @@ function CodingPanel({ groupId }) {
   const closeProblem = () => {
     setActiveProblem(null);
     setCode("");
-    setManualOutputs([""]);
     setRunResult(null);
   };
 
@@ -131,41 +130,44 @@ function CodingPanel({ groupId }) {
     if (!activeProblem) return;
 
     try {
+      setLoadingRun(true);
       const res = await api.post(`/coding/problems/${activeProblem._id}/run`, {
         code,
-        output: manualOutputs[0] || "",
       });
       setRunResult(res.data);
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to run preview");
+      alert(error.response?.data?.message || "Failed to run Python code");
+    } finally {
+      setLoadingRun(false);
     }
   };
 
   const submitCode = async () => {
     if (!activeProblem) return;
 
-    const confirmed = window.confirm(
-      "Submit this Python solution? Current version compares your entered outputs with test-case expected outputs until real Python execution is connected.",
-    );
+    const confirmed = window.confirm("Submit this Python solution? It will run against all visible and hidden tests.");
     if (!confirmed) return;
 
     try {
+      setLoadingSubmit(true);
       const res = await api.post(`/coding/problems/${activeProblem._id}/submit`, {
         code,
-        outputs: manualOutputs,
       });
+      setRunResult(res.data);
       alert(res.data.message);
       await loadProblems();
       await openProblem(activeProblem._id);
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to submit code");
+      alert(error.response?.data?.message || "Failed to submit Python code");
+    } finally {
+      setLoadingSubmit(false);
     }
   };
 
-  const updateManualOutput = (index, value) => {
-    const updated = [...manualOutputs];
-    updated[index] = value;
-    setManualOutputs(updated);
+  const resultColor = (status) => {
+    if (status === "Accepted") return "success";
+    if (status === "Error") return "warning";
+    return "error";
   };
 
   if (activeProblem) {
@@ -199,7 +201,7 @@ function CodingPanel({ groupId }) {
               <Stack direction="row" spacing={1} mt={1} flexWrap="wrap">
                 <Chip
                   label={activeProblem.userSubmission.status}
-                  color={activeProblem.userSubmission.status === "Accepted" ? "success" : "error"}
+                  color={resultColor(activeProblem.userSubmission.status)}
                 />
                 <Chip
                   label={`${activeProblem.userSubmission.passedTests}/${activeProblem.userSubmission.totalTests} tests passed`}
@@ -231,11 +233,11 @@ function CodingPanel({ groupId }) {
                   }}
                 />
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1} mt={2}>
-                  <Button variant="outlined" onClick={runPreview}>
-                    Check First Test Output
+                  <Button variant="outlined" onClick={runPreview} disabled={loadingRun || loadingSubmit}>
+                    {loadingRun ? "Running..." : "Run Visible Tests"}
                   </Button>
-                  <Button variant="contained" onClick={submitCode}>
-                    Submit Solution
+                  <Button variant="contained" onClick={submitCode} disabled={loadingRun || loadingSubmit}>
+                    {loadingSubmit ? "Submitting..." : "Submit Solution"}
                   </Button>
                 </Stack>
               </CardContent>
@@ -247,10 +249,10 @@ function CodingPanel({ groupId }) {
               <Card sx={{ borderRadius: 4 }}>
                 <CardContent>
                   <Typography variant="h6" fontWeight="bold" mb={1}>
-                    Test Output Entry
+                    Test Cases
                   </Typography>
                   <Typography variant="body2" color="text.secondary" mb={2}>
-                    Temporary mode: enter expected program outputs manually after running Python locally. Next upgrade can connect Piston/Judge0 for automatic execution.
+                    Run executes visible tests. Submit executes both visible and hidden tests using the Piston Python API.
                   </Typography>
 
                   {visibleTests.map((testCase, index) => (
@@ -268,14 +270,6 @@ function CodingPanel({ groupId }) {
                             <Typography sx={{ whiteSpace: "pre-wrap", fontFamily: "monospace" }}>{testCase.expectedOutput}</Typography>
                           </>
                         )}
-                        <TextField
-                          fullWidth
-                          multiline
-                          rows={2}
-                          label="Your Output"
-                          value={manualOutputs[index] || ""}
-                          onChange={(event) => updateManualOutput(index, event.target.value)}
-                        />
                       </Stack>
                     </Paper>
                   ))}
@@ -285,20 +279,47 @@ function CodingPanel({ groupId }) {
               {runResult && (
                 <Card sx={{ borderRadius: 4 }}>
                   <CardContent>
-                    <Typography variant="h6" fontWeight="bold">
-                      Preview Result
-                    </Typography>
-                    <Chip
-                      sx={{ mt: 1 }}
-                      label={runResult.isCorrect ? "First test matched" : "First test not matched"}
-                      color={runResult.isCorrect ? "success" : "error"}
-                    />
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                      <Typography variant="h6" fontWeight="bold">
+                        Execution Result
+                      </Typography>
+                      <Chip label={runResult.status || runResult.message} color={resultColor(runResult.status || runResult.message)} />
+                    </Stack>
                     <Typography variant="body2" color="text.secondary" mt={1}>
-                      Expected: {runResult.expectedOutput || "Empty"}
+                      Passed {runResult.passedTests || 0} / {runResult.totalTests || 0} tests
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Received: {runResult.receivedOutput || "Empty"}
-                    </Typography>
+
+                    <Stack spacing={1.5} mt={2}>
+                      {(runResult.results || []).map((result) => (
+                        <Paper key={result.testNumber} sx={{ p: 1.5, borderRadius: 3, bgcolor: "#f8fafc" }}>
+                          <Stack spacing={0.75}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Typography fontWeight="bold">Test {result.testNumber}</Typography>
+                              <Chip
+                                size="small"
+                                label={result.passed ? "Passed" : "Failed"}
+                                color={result.passed ? "success" : "error"}
+                              />
+                              {result.hidden && <Chip size="small" label="Hidden" />}
+                            </Stack>
+                            {!result.hidden && (
+                              <>
+                                <Typography variant="caption" color="text.secondary">Expected</Typography>
+                                <Typography sx={{ whiteSpace: "pre-wrap", fontFamily: "monospace" }}>{result.expectedOutput || "Empty"}</Typography>
+                                <Typography variant="caption" color="text.secondary">Received</Typography>
+                                <Typography sx={{ whiteSpace: "pre-wrap", fontFamily: "monospace" }}>{result.receivedOutput || "Empty"}</Typography>
+                                {result.stderr && (
+                                  <>
+                                    <Typography variant="caption" color="error">Error</Typography>
+                                    <Typography color="error" sx={{ whiteSpace: "pre-wrap", fontFamily: "monospace" }}>{result.stderr}</Typography>
+                                  </>
+                                )}
+                              </>
+                            )}
+                          </Stack>
+                        </Paper>
+                      ))}
+                    </Stack>
                   </CardContent>
                 </Card>
               )}
@@ -336,10 +357,10 @@ function CodingPanel({ groupId }) {
       <Card sx={{ borderRadius: 4 }}>
         <CardContent>
           <Typography variant="h6" fontWeight="bold">
-            Python Execution Status
+            Python Execution Connected
           </Typography>
           <Typography color="text.secondary" mt={1}>
-            This first version stores Python problems and submissions. Automatic Python execution needs a provider such as Piston or Judge0; until then, submit mode compares manually entered outputs with test cases.
+            Run and Submit now execute Python through the backend using the Piston execution API.
           </Typography>
         </CardContent>
       </Card>
@@ -477,7 +498,7 @@ function CodingPanel({ groupId }) {
                       {problem.userSubmission && (
                         <Chip
                           label={problem.userSubmission.status}
-                          color={problem.userSubmission.status === "Accepted" ? "success" : "error"}
+                          color={resultColor(problem.userSubmission.status)}
                         />
                       )}
                     </Stack>
