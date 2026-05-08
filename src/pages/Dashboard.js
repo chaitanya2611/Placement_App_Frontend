@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
-import GroupChat from "../components/GroupChat";
 
 import {
   AppBar,
@@ -38,14 +37,11 @@ function Dashboard() {
   });
 
   const [open, setOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState(null);
 
   const handleOpen = () => setOpen(true);
 
   const handleOpenChat = (group) => {
-    setSelectedGroup(group);
-    setChatOpen(true);
+    navigate(`/groups/${group._id}/chat`);
   };
 
   const handleClose = () => {
@@ -417,12 +413,6 @@ function Dashboard() {
             ))}
           </Grid>
         </Container>
-
-        <GroupChat
-          open={chatOpen}
-          onClose={() => setChatOpen(false)}
-          group={selectedGroup}
-        />
       </Box>
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
