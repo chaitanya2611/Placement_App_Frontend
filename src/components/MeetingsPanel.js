@@ -81,6 +81,11 @@ function MeetingsPanel({ groupId, isGroupCreator = false }) {
   };
 
   const copyMeetingLink = async (meetingUrl) => {
+    if (!meetingUrl) {
+      alert("This meeting has ended. Link is no longer available.");
+      return;
+    }
+
     try {
       await navigator.clipboard.writeText(meetingUrl);
       alert("Meeting link copied");
@@ -90,11 +95,16 @@ function MeetingsPanel({ groupId, isGroupCreator = false }) {
   };
 
   const openMeeting = (meetingUrl) => {
+    if (!meetingUrl) {
+      alert("This meeting has ended. Link is no longer available.");
+      return;
+    }
+
     window.open(meetingUrl, "_blank", "noopener,noreferrer");
   };
 
   const endMeeting = async (meetingId) => {
-    const confirmed = window.confirm("Mark this meeting as ended?");
+    const confirmed = window.confirm("Mark this meeting as ended? The meeting link will be removed from this app.");
     if (!confirmed) return;
 
     try {
@@ -239,6 +249,7 @@ function MeetingsPanel({ groupId, isGroupCreator = false }) {
           {meetings.map((meeting) => {
             const creatorId = meeting.createdBy?._id || meeting.createdBy;
             const canEnd = creatorId === userId && meeting.status !== "ended";
+            const isEnded = meeting.status === "ended" || !meeting.meetingUrl;
 
             return (
               <Grid item xs={12} md={6} key={meeting._id}>
@@ -269,25 +280,30 @@ function MeetingsPanel({ groupId, isGroupCreator = false }) {
                       Created by {meeting.createdBy?.name || "Unknown"}
                     </Typography>
 
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        startIcon={<OpenInNewIcon />}
-                        onClick={() => openMeeting(meeting.meetingUrl)}
-                        disabled={meeting.status === "ended"}
-                      >
-                        Join Meeting
-                      </Button>
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        startIcon={<ContentCopyIcon />}
-                        onClick={() => copyMeetingLink(meeting.meetingUrl)}
-                      >
-                        Copy Link
-                      </Button>
-                    </Stack>
+                    {isEnded ? (
+                      <Typography variant="body2" color="text.secondary">
+                        This meeting has ended. The meeting link is no longer available in the app.
+                      </Typography>
+                    ) : (
+                      <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          startIcon={<OpenInNewIcon />}
+                          onClick={() => openMeeting(meeting.meetingUrl)}
+                        >
+                          Join Meeting
+                        </Button>
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          startIcon={<ContentCopyIcon />}
+                          onClick={() => copyMeetingLink(meeting.meetingUrl)}
+                        >
+                          Copy Link
+                        </Button>
+                      </Stack>
+                    )}
 
                     {canEnd && (
                       <Button
