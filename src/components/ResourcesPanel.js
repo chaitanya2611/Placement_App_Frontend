@@ -21,6 +21,24 @@ import LinkIcon from "@mui/icons-material/Link";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+const allowedFileTypes = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "text/plain",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+];
+
+const acceptedFileExtensions = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.webp";
+
 function ResourcesPanel({ groupId, userId }) {
   const [resources, setResources] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -55,6 +73,50 @@ function ResourcesPanel({ groupId, userId }) {
     });
     setShowForm(false);
     setMode("file");
+  };
+
+  const getFileTypeLabel = (resource) => {
+    if (resource.resourceType === "link") return "Link";
+
+    const mime = resource.fileMimeType || "";
+    const name = resource.fileName || "";
+    const extension = name.split(".").pop()?.toLowerCase();
+
+    if (mime.includes("pdf") || extension === "pdf") return "PDF";
+    if (mime.includes("word") || ["doc", "docx"].includes(extension)) return "DOC";
+    if (mime.includes("excel") || mime.includes("spreadsheet") || ["xls", "xlsx"].includes(extension)) return "Excel";
+    if (mime.includes("powerpoint") || mime.includes("presentation") || ["ppt", "pptx"].includes(extension)) return "PPT";
+    if (mime.startsWith("image/") || ["jpg", "jpeg", "png", "webp"].includes(extension)) return "Image";
+    if (mime.includes("text") || extension === "txt") return "Text";
+
+    return "File";
+  };
+
+  const getFileChipColor = (label) => {
+    if (label === "Link") return "success";
+    if (["PDF", "DOC", "PPT"].includes(label)) return "primary";
+    if (["Excel", "Text"].includes(label)) return "warning";
+    if (label === "Image") return "secondary";
+    return "default";
+  };
+
+  const handleFileSelect = (event) => {
+    const selectedFile = event.target.files[0];
+    if (!selectedFile) return;
+
+    if (!allowedFileTypes.includes(selectedFile.type)) {
+      alert("Only PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG, and WEBP files are allowed.");
+      event.target.value = "";
+      return;
+    }
+
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      alert("File must be less than 10 MB.");
+      event.target.value = "";
+      return;
+    }
+
+    setForm({ ...form, file: selectedFile });
   };
 
   const handleSubmit = async (event) => {
@@ -144,7 +206,7 @@ function ResourcesPanel({ groupId, userId }) {
                 Resources
               </Typography>
               <Typography color="text.secondary">
-                Share PDFs, notes, sheets, links, and interview preparation material.
+                Share PDFs, documents, images, links, and interview preparation material.
               </Typography>
             </Box>
 
@@ -210,14 +272,16 @@ function ResourcesPanel({ groupId, userId }) {
                   <input
                     hidden
                     type="file"
-                    onChange={(event) =>
-                      setForm({ ...form, file: event.target.files[0] })
-                    }
+                    accept={acceptedFileExtensions}
+                    onChange={handleFileSelect}
                   />
                 </Button>
+                <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+                  Allowed: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG, WEBP. Max 10 MB.
+                </Typography>
                 {form.file && (
                   <Typography variant="body2" color="text.secondary" mt={1}>
-                    Selected: {form.file.name}
+                    Selected: {form.file.name} ({formatFileSize(form.file.size)})
                   </Typography>
                 )}
               </>
@@ -253,65 +317,69 @@ function ResourcesPanel({ groupId, userId }) {
         </Card>
       ) : (
         <Grid container spacing={2}>
-          {resources.map((resource) => (
-            <Grid item xs={12} md={6} key={resource._id}>
-              <Paper sx={{ p: 2.5, borderRadius: 4, height: "100%" }}>
-                <Stack spacing={1.5}>
-                  <Stack direction="row" justifyContent="space-between" spacing={1}>
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      {resource.resourceType === "link" ? (
-                        <LinkIcon color="primary" />
-                      ) : (
-                        <InsertDriveFileIcon color="primary" />
+          {resources.map((resource) => {
+            const fileTypeLabel = getFileTypeLabel(resource);
+
+            return (
+              <Grid item xs={12} md={6} key={resource._id}>
+                <Paper sx={{ p: 2.5, borderRadius: 4, height: "100%" }}>
+                  <Stack spacing={1.5}>
+                    <Stack direction="row" justifyContent="space-between" spacing={1}>
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        {resource.resourceType === "link" ? (
+                          <LinkIcon color="primary" />
+                        ) : (
+                          <InsertDriveFileIcon color="primary" />
+                        )}
+                        <Box>
+                          <Typography fontWeight="bold">{resource.title}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Added by {resource.uploadedBy?.name || "Unknown"}
+                          </Typography>
+                        </Box>
+                      </Stack>
+
+                      {isOwnResource(resource) && (
+                        <IconButton
+                          color="error"
+                          size="small"
+                          onClick={() => handleDelete(resource._id)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
                       )}
-                      <Box>
-                        <Typography fontWeight="bold">{resource.title}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Added by {resource.uploadedBy?.name || "Unknown"}
-                        </Typography>
-                      </Box>
                     </Stack>
 
-                    {isOwnResource(resource) && (
-                      <IconButton
-                        color="error"
+                    {resource.description && (
+                      <Typography color="text.secondary">{resource.description}</Typography>
+                    )}
+
+                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                      <Chip
                         size="small"
-                        onClick={() => handleDelete(resource._id)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    )}
+                        label={fileTypeLabel}
+                        color={getFileChipColor(fileTypeLabel)}
+                      />
+                      {resource.fileName && <Chip size="small" label={resource.fileName} />}
+                      {resource.fileSize > 0 && (
+                        <Chip size="small" label={formatFileSize(resource.fileSize)} />
+                      )}
+                    </Stack>
+
+                    <Button
+                      variant="outlined"
+                      href={resource.resourceType === "link" ? resource.linkUrl : resource.fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      fullWidth
+                    >
+                      {resource.resourceType === "link" ? "Open Link" : "Open / Download"}
+                    </Button>
                   </Stack>
-
-                  {resource.description && (
-                    <Typography color="text.secondary">{resource.description}</Typography>
-                  )}
-
-                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                    <Chip
-                      size="small"
-                      label={resource.resourceType === "link" ? "Link" : "File"}
-                      color={resource.resourceType === "link" ? "success" : "primary"}
-                    />
-                    {resource.fileName && <Chip size="small" label={resource.fileName} />}
-                    {resource.fileSize > 0 && (
-                      <Chip size="small" label={formatFileSize(resource.fileSize)} />
-                    )}
-                  </Stack>
-
-                  <Button
-                    variant="outlined"
-                    href={resource.resourceType === "link" ? resource.linkUrl : resource.fileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    fullWidth
-                  >
-                    {resource.resourceType === "link" ? "Open Link" : "Open / Download"}
-                  </Button>
-                </Stack>
-              </Paper>
-            </Grid>
-          ))}
+                </Paper>
+              </Grid>
+            );
+          })}
         </Grid>
       )}
     </Stack>
