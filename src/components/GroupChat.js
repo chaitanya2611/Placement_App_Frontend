@@ -17,7 +17,7 @@ import {
   Menu,
   MenuItem,
   Tooltip,
-  Chip,
+  Popover,
 } from "@mui/material";
 
 import SendIcon from "@mui/icons-material/Send";
@@ -27,6 +27,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
+import AddReactionIcon from "@mui/icons-material/AddReaction";
 
 const reactionOptions = ["👍", "❤️", "😂", "🔥", "👏", "😮"];
 
@@ -43,6 +44,8 @@ function GroupChat({ group }) {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
+  const [reactionAnchor, setReactionAnchor] = useState(null);
+  const [reactionMessage, setReactionMessage] = useState(null);
 
   const bottomRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -146,9 +149,20 @@ function GroupChat({ group }) {
     }
   };
 
+  const openReactionPicker = (event, message) => {
+    setReactionAnchor(event.currentTarget);
+    setReactionMessage(message);
+  };
+
+  const closeReactionPicker = () => {
+    setReactionAnchor(null);
+    setReactionMessage(null);
+  };
+
   const handleReaction = async (messageId, emoji) => {
     try {
       await api.post(`/messages/${messageId}/reactions`, { emoji });
+      closeReactionPicker();
     } catch (error) {
       alert(error.response?.data?.message || "Failed to react");
     }
@@ -272,12 +286,7 @@ function GroupChat({ group }) {
             <ArrowBackIcon />
           </IconButton>
 
-          <Avatar
-            sx={{
-              bgcolor: "#25d366",
-              fontWeight: "bold",
-            }}
-          >
+          <Avatar sx={{ bgcolor: "#25d366", fontWeight: "bold" }}>
             {group.title?.charAt(0)?.toUpperCase()}
           </Avatar>
 
@@ -327,7 +336,7 @@ function GroupChat({ group }) {
                   key={message._id}
                   direction="row"
                   justifyContent={mine ? "flex-end" : "flex-start"}
-                  sx={{ mb: 2.4 }}
+                  sx={{ mb: reactionSummary.length ? 2 : 1.3 }}
                 >
                   {!mine && (
                     <Avatar
@@ -351,111 +360,147 @@ function GroupChat({ group }) {
                       alignItems: mine ? "flex-end" : "flex-start",
                     }}
                   >
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        width: "fit-content",
-                        maxWidth: "100%",
-                        px: 1.2,
-                        py: 0.8,
-                        pr: mine ? 4.5 : 1.2,
-                        borderRadius: mine
-                          ? "18px 18px 4px 18px"
-                          : "18px 18px 18px 4px",
-                        bgcolor: mine ? "#dcf8c6" : "#ffffff",
-                        color: "#111827",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
-                        position: "relative",
-                      }}
-                    >
-                      {mine && (
-                        <Tooltip title="Edit or delete">
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                      {!mine && (
+                        <Tooltip title="React">
                           <IconButton
                             size="small"
-                            onClick={(event) => handleOpenMenu(event, message)}
+                            onClick={(event) => openReactionPicker(event, message)}
                             sx={{
-                              position: "absolute",
-                              top: 3,
-                              right: 3,
-                              width: 30,
-                              height: 30,
+                              width: 28,
+                              height: 28,
+                              bgcolor: "rgba(255,255,255,0.8)",
                               color: "#075e54",
-                              bgcolor: "rgba(255,255,255,0.9)",
-                              border: "1px solid rgba(7,94,84,0.2)",
-                              "&:hover": {
-                                bgcolor: "white",
-                              },
+                              "&:hover": { bgcolor: "white" },
                             }}
                           >
-                            <MoreVertIcon fontSize="small" />
+                            <AddReactionIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                       )}
 
-                      {!mine && (
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          width: "fit-content",
+                          maxWidth: "100%",
+                          px: 1.2,
+                          py: 0.8,
+                          pr: mine ? 4.5 : 1.2,
+                          borderRadius: mine
+                            ? "18px 18px 4px 18px"
+                            : "18px 18px 18px 4px",
+                          bgcolor: mine ? "#dcf8c6" : "#ffffff",
+                          color: "#111827",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+                          position: "relative",
+                        }}
+                      >
+                        {mine && (
+                          <Tooltip title="Edit, delete, or react">
+                            <IconButton
+                              size="small"
+                              onClick={(event) => handleOpenMenu(event, message)}
+                              sx={{
+                                position: "absolute",
+                                top: 3,
+                                right: 3,
+                                width: 30,
+                                height: 30,
+                                color: "#075e54",
+                                bgcolor: "rgba(255,255,255,0.9)",
+                                border: "1px solid rgba(7,94,84,0.2)",
+                                "&:hover": { bgcolor: "white" },
+                              }}
+                            >
+                              <MoreVertIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+
+                        {!mine && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              display: "block",
+                              fontWeight: "bold",
+                              color: "#075e54",
+                              mb: 0.3,
+                            }}
+                          >
+                            {message.sender?.name}
+                          </Typography>
+                        )}
+
+                        {message.imageUrl && (
+                          <Box
+                            component="img"
+                            src={message.imageUrl}
+                            alt="chat upload"
+                            onClick={() => setSelectedImage(message.imageUrl)}
+                            sx={{
+                              width: { xs: 220, sm: 260, md: 320 },
+                              maxWidth: "100%",
+                              height: { xs: 220, sm: 260, md: 320 },
+                              objectFit: "cover",
+                              borderRadius: 2.5,
+                              display: "block",
+                              mb: message.text ? 0.8 : 0,
+                              cursor: "pointer",
+                            }}
+                          />
+                        )}
+
+                        {message.text && (
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontSize: 14.5,
+                              lineHeight: 1.45,
+                              whiteSpace: "pre-wrap",
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {message.text}
+                          </Typography>
+                        )}
+
                         <Typography
                           variant="caption"
                           sx={{
                             display: "block",
-                            fontWeight: "bold",
-                            color: "#075e54",
-                            mb: 0.3,
+                            mt: 0.3,
+                            fontSize: 10.5,
+                            color: "text.secondary",
+                            textAlign: "right",
                           }}
                         >
-                          {message.sender?.name}
+                          {message.isEdited ? "edited · " : ""}
+                          {new Date(message.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </Typography>
-                      )}
+                      </Paper>
 
-                      {message.imageUrl && (
-                        <Box
-                          component="img"
-                          src={message.imageUrl}
-                          alt="chat upload"
-                          onClick={() => setSelectedImage(message.imageUrl)}
-                          sx={{
-                            width: { xs: 220, sm: 260, md: 320 },
-                            maxWidth: "100%",
-                            height: { xs: 220, sm: 260, md: 320 },
-                            objectFit: "cover",
-                            borderRadius: 2.5,
-                            display: "block",
-                            mb: message.text ? 0.8 : 0,
-                            cursor: "pointer",
-                          }}
-                        />
+                      {mine && (
+                        <Tooltip title="React">
+                          <IconButton
+                            size="small"
+                            onClick={(event) => openReactionPicker(event, message)}
+                            sx={{
+                              width: 28,
+                              height: 28,
+                              bgcolor: "rgba(255,255,255,0.8)",
+                              color: "#075e54",
+                              "&:hover": { bgcolor: "white" },
+                            }}
+                          >
+                            <AddReactionIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       )}
-
-                      {message.text && (
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontSize: 14.5,
-                            lineHeight: 1.45,
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word",
-                          }}
-                        >
-                          {message.text}
-                        </Typography>
-                      )}
-
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          display: "block",
-                          mt: 0.3,
-                          fontSize: 10.5,
-                          color: "text.secondary",
-                          textAlign: "right",
-                        }}
-                      >
-                        {message.isEdited ? "edited · " : ""}
-                        {new Date(message.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </Typography>
-                    </Paper>
+                    </Box>
 
                     {reactionSummary.length > 0 && (
                       <Stack
@@ -478,40 +523,6 @@ function GroupChat({ group }) {
                         ))}
                       </Stack>
                     )}
-
-                    <Box
-                      sx={{
-                        mt: 0.6,
-                        px: 0.8,
-                        py: 0.4,
-                        borderRadius: 5,
-                        bgcolor: "rgba(255,255,255,0.9)",
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-                      }}
-                    >
-                      <Stack direction="row" spacing={0.4} flexWrap="wrap">
-                        {reactionOptions.map((emoji) => (
-                          <Tooltip title={`React ${emoji}`} key={emoji}>
-                            <Button
-                              size="small"
-                              onClick={() => handleReaction(message._id, emoji)}
-                              sx={{
-                                minWidth: 30,
-                                width: 30,
-                                height: 26,
-                                p: 0,
-                                borderRadius: 4,
-                                fontSize: 15,
-                                bgcolor: "#f8fafc",
-                                border: "1px solid #e2e8f0",
-                              }}
-                            >
-                              {emoji}
-                            </Button>
-                          </Tooltip>
-                        ))}
-                      </Stack>
-                    </Box>
                   </Box>
                 </Stack>
               );
@@ -631,9 +642,7 @@ function GroupChat({ group }) {
                 borderRadius: 8,
                 bgcolor: "white",
                 px: 1,
-                "& fieldset": {
-                  border: "none",
-                },
+                "& fieldset": { border: "none" },
               },
             }}
           />
@@ -649,9 +658,7 @@ function GroupChat({ group }) {
               borderRadius: "50%",
               bgcolor: "#25d366",
               color: "white",
-              "&:hover": {
-                bgcolor: "#20bd5a",
-              },
+              "&:hover": { bgcolor: "#20bd5a" },
             }}
           >
             <SendIcon />
@@ -659,28 +666,59 @@ function GroupChat({ group }) {
         </Box>
       </Box>
 
-      <Menu
-        anchorEl={menuAnchor}
-        open={Boolean(menuAnchor)}
-        onClose={handleCloseMenu}
-      >
+      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleCloseMenu}>
         <MenuItem onClick={startEditMessage} disabled={!selectedMessage?.text}>
           <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit message
+        </MenuItem>
+        <MenuItem
+          onClick={(event) => {
+            if (selectedMessage) openReactionPicker(event, selectedMessage);
+            handleCloseMenu();
+          }}
+        >
+          <AddReactionIcon fontSize="small" sx={{ mr: 1 }} /> React
         </MenuItem>
         <MenuItem onClick={handleDeleteMessage} sx={{ color: "error.main" }}>
           <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Delete message
         </MenuItem>
       </Menu>
 
+      <Popover
+        open={Boolean(reactionAnchor)}
+        anchorEl={reactionAnchor}
+        onClose={closeReactionPicker}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        transformOrigin={{ vertical: "bottom", horizontal: "center" }}
+        PaperProps={{
+          sx: {
+            px: 1,
+            py: 0.8,
+            borderRadius: 5,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+          },
+        }}
+      >
+        <Stack direction="row" spacing={0.5}>
+          {reactionOptions.map((emoji) => (
+            <Button
+              key={emoji}
+              size="small"
+              onClick={() =>
+                reactionMessage && handleReaction(reactionMessage._id, emoji)
+              }
+              sx={{ minWidth: 34, fontSize: 20, borderRadius: 4 }}
+            >
+              {emoji}
+            </Button>
+          ))}
+        </Stack>
+      </Popover>
+
       <Dialog
         open={Boolean(selectedImage)}
         onClose={() => setSelectedImage("")}
         fullScreen
-        PaperProps={{
-          sx: {
-            bgcolor: "rgba(0,0,0,0.94)",
-          },
-        }}
+        PaperProps={{ sx: { bgcolor: "rgba(0,0,0,0.94)" } }}
       >
         <DialogContent
           sx={{
@@ -700,9 +738,7 @@ function GroupChat({ group }) {
               right: 16,
               color: "white",
               bgcolor: "rgba(255,255,255,0.12)",
-              "&:hover": {
-                bgcolor: "rgba(255,255,255,0.2)",
-              },
+              "&:hover": { bgcolor: "rgba(255,255,255,0.2)" },
             }}
           >
             <CloseIcon />
@@ -713,11 +749,7 @@ function GroupChat({ group }) {
               component="img"
               src={selectedImage}
               alt="full preview"
-              sx={{
-                maxWidth: "100%",
-                maxHeight: "100%",
-                objectFit: "contain",
-              }}
+              sx={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
             />
           )}
         </DialogContent>
