@@ -6,8 +6,10 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   Divider,
   Grid,
+  LinearProgress,
   MenuItem,
   Paper,
   Stack,
@@ -19,6 +21,13 @@ import AddIcon from "@mui/icons-material/Add";
 
 function McqPanel({ groupId }) {
   const [questions, setQuestions] = useState([]);
+  const [stats, setStats] = useState({
+    totalAttempts: 0,
+    correctAttempts: 0,
+    wrongAttempts: 0,
+    scorePercentage: 0,
+  });
+  const [selectedAnswers, setSelectedAnswers] = useState({});
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     questionText: "",
@@ -37,9 +46,19 @@ function McqPanel({ groupId }) {
     }
   }, [groupId]);
 
+  const loadStats = useCallback(async () => {
+    try {
+      const res = await api.get(`/questions/stats/${groupId}`);
+      setStats(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  }, [groupId]);
+
   useEffect(() => {
     loadQuestions();
-  }, [loadQuestions]);
+    loadStats();
+  }, [loadQuestions, loadStats]);
 
   const handleOptionChange = (index, value) => {
     const updatedOptions = [...form.options];
@@ -90,9 +109,72 @@ function McqPanel({ groupId }) {
 
       resetForm();
       await loadQuestions();
+      await loadStats();
     } catch (error) {
       alert(error.response?.data?.message || "Failed to add MCQ");
     }
+  };
+
+  const handleSelectAnswer = (questionId, optionIndex) => {
+    setSelectedAnswers((prev) => ({
+      ...prev,
+      [questionId]: optionIndex,
+    }));
+  };
+
+  const handleSubmitAnswer = async (questionId) => {
+    const selectedOption = selectedAnswers[questionId];
+
+    if (selectedOption === undefined) {
+      alert("Please select an answer first");
+      return;
+    }
+
+    try {
+      await api.post(`/questions/attempt/${questionId}`, {
+        selectedOption,
+      });
+
+      await loadQuestions();
+      await loadStats();
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to submit answer");
+    }
+  };
+
+  const getOptionStyle = (question, optionIndex) => {
+    const attempt = question.userAttempt;
+    const selectedOption = selectedAnswers[question._id];
+
+    if (!attempt) {
+      return {
+        bgcolor: selectedOption === optionIndex ? "#e0f2fe" : "#f8fafc",
+        border:
+          selectedOption === optionIndex
+            ? "2px solid #0284c7"
+            : "1px solid #e2e8f0",
+        cursor: "pointer",
+      };
+    }
+
+    if (optionIndex === question.correctOption) {
+      return {
+        bgcolor: "#dcf8c6",
+        border: "2px solid #22c55e",
+      };
+    }
+
+    if (optionIndex === attempt.selectedOption && !attempt.isCorrect) {
+      return {
+        bgcolor: "#fee2e2",
+        border: "2px solid #ef4444",
+      };
+    }
+
+    return {
+      bgcolor: "#f8fafc",
+      border: "1px solid #e2e8f0",
+    };
   };
 
   return (
@@ -110,7 +192,7 @@ function McqPanel({ groupId }) {
                 Group MCQs
               </Typography>
               <Typography color="text.secondary">
-                Add and practice questions with your group members.
+                Select an answer, submit it, and track your practice score.
               </Typography>
             </Box>
 
@@ -121,6 +203,29 @@ function McqPanel({ groupId }) {
             >
               Add MCQ
             </Button>
+          </Stack>
+        </CardContent>
+      </Card>
+
+      <Card sx={{ borderRadius: 4 }}>
+        <CardContent>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "stretch", sm: "center" }}>
+            <Box sx={{ flex: 1 }}>
+              <Typography fontWeight="bold">Your Score</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {stats.correctAttempts} correct out of {stats.totalAttempts} attempted
+              </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={stats.scorePercentage || 0}
+                sx={{ mt: 1, height: 8, borderRadius: 5 }}
+              />
+            </Box>
+            <Chip
+              label={`${stats.scorePercentage || 0}%`}
+              color={(stats.scorePercentage || 0) >= 60 ? "success" : "warning"}
+              sx={{ fontWeight: "bold" }}
+            />
           </Stack>
         </CardContent>
       </Card>
@@ -223,67 +328,87 @@ function McqPanel({ groupId }) {
           </CardContent>
         </Card>
       ) : (
-        questions.map((question, index) => (
-          <Card key={question._id} sx={{ borderRadius: 4 }}>
-            <CardContent>
-              <Typography fontWeight="bold" mb={1}>
-                Q{index + 1}. {question.questionText}
-              </Typography>
+        questions.map((question, index) => {
+          const attempted = Boolean(question.userAttempt);
 
-              {question.questionImageUrl && (
-                <Box
-                  component="img"
-                  src={question.questionImageUrl}
-                  alt="question"
-                  sx={{
-                    width: "100%",
-                    maxWidth: 420,
-                    borderRadius: 3,
-                    mb: 2,
-                    objectFit: "cover",
-                  }}
-                />
-              )}
+          return (
+            <Card key={question._id} sx={{ borderRadius: 4 }}>
+              <CardContent>
+                <Stack direction="row" justifyContent="space-between" spacing={1} mb={1}>
+                  <Typography fontWeight="bold">
+                    Q{index + 1}. {question.questionText}
+                  </Typography>
+                  {attempted && (
+                    <Chip
+                      size="small"
+                      label={question.userAttempt.isCorrect ? "Correct" : "Wrong"}
+                      color={question.userAttempt.isCorrect ? "success" : "error"}
+                    />
+                  )}
+                </Stack>
 
-              <Grid container spacing={1.5}>
-                {question.options.map((option, optionIndex) => (
-                  <Grid item xs={12} md={6} key={optionIndex}>
-                    <Paper
-                      sx={{
-                        p: 1.5,
-                        borderRadius: 3,
-                        bgcolor:
-                          optionIndex === question.correctOption
-                            ? "#dcf8c6"
-                            : "#f8fafc",
-                        border:
-                          optionIndex === question.correctOption
-                            ? "1px solid #25d366"
-                            : "1px solid #e2e8f0",
-                      }}
+                {question.questionImageUrl && (
+                  <Box
+                    component="img"
+                    src={question.questionImageUrl}
+                    alt="question"
+                    sx={{
+                      width: "100%",
+                      maxWidth: 420,
+                      borderRadius: 3,
+                      mb: 2,
+                      objectFit: "cover",
+                    }}
+                  />
+                )}
+
+                <Grid container spacing={1.5}>
+                  {question.options.map((option, optionIndex) => (
+                    <Grid item xs={12} md={6} key={optionIndex}>
+                      <Paper
+                        onClick={() =>
+                          !attempted && handleSelectAnswer(question._id, optionIndex)
+                        }
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 3,
+                          ...getOptionStyle(question, optionIndex),
+                        }}
+                      >
+                        <Typography>
+                          {String.fromCharCode(65 + optionIndex)}. {option}
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                  ))}
+                </Grid>
+
+                {!attempted && (
+                  <Stack direction="row" justifyContent="flex-end" mt={2}>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleSubmitAnswer(question._id)}
                     >
-                      <Typography>
-                        {String.fromCharCode(65 + optionIndex)}. {option}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
+                      Submit Answer
+                    </Button>
+                  </Stack>
+                )}
 
-              {question.explanation && (
-                <Box sx={{ mt: 2 }}>
-                  <Typography fontWeight="bold">Explanation</Typography>
-                  <Typography color="text.secondary">{question.explanation}</Typography>
-                </Box>
-              )}
+                {attempted && question.explanation && (
+                  <Box sx={{ mt: 2, p: 2, bgcolor: "#f8fafc", borderRadius: 3 }}>
+                    <Typography fontWeight="bold">Explanation</Typography>
+                    <Typography color="text.secondary">{question.explanation}</Typography>
+                  </Box>
+                )}
 
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="caption" color="text.secondary">
-                Added by {question.createdBy?.name || "Unknown"}
-              </Typography>
-            </CardContent>
-          </Card>
-        ))
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="caption" color="text.secondary">
+                  Added by {question.createdBy?.name || "Unknown"}
+                </Typography>
+              </CardContent>
+            </Card>
+          );
+        })
       )}
     </Stack>
   );
