@@ -4,6 +4,7 @@ import api from "../api";
 import GroupChat from "../components/GroupChat";
 import ResourcesPanel from "../components/ResourcesPanel";
 import McqPanel from "../components/McqPanel";
+import QuizPanel from "../components/QuizPanel";
 import MembersPanel from "../components/MembersPanel";
 import LeaderboardPanel from "../components/LeaderboardPanel";
 
@@ -183,6 +184,7 @@ function GroupWorkspace() {
           >
             <Tab label="Chat" />
             <Tab label="MCQs" />
+            <Tab label="Quizzes" />
             <Tab label="Leaderboard" />
             <Tab label="Members" />
             <Tab label="Resources" />
@@ -212,11 +214,17 @@ function GroupWorkspace() {
 
         {activeTab === 2 && (
           <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
-            <LeaderboardPanel groupId={groupId} />
+            <QuizPanel groupId={groupId} />
           </Box>
         )}
 
         {activeTab === 3 && (
+          <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
+            <LeaderboardPanel groupId={groupId} />
+          </Box>
+        )}
+
+        {activeTab === 4 && (
           <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
             <MembersPanel
               group={group}
@@ -227,7 +235,7 @@ function GroupWorkspace() {
           </Box>
         )}
 
-        {activeTab === 4 && (
+        {activeTab === 5 && (
           <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
             <ResourcesPanel groupId={groupId} userId={userId} />
           </Box>
