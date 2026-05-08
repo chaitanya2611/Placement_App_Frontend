@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../api";
 
 import {
@@ -14,11 +15,11 @@ import {
   Typography,
 } from "@mui/material";
 
-function MembersPanel({ group, groupId, userId }) {
+function MembersPanel({ group, groupId, userId, onGroupUpdated }) {
+  const navigate = useNavigate();
   const [joinRequests, setJoinRequests] = useState([]);
 
-  const isCreator =
-    (group.creator?._id || group.creator) === userId;
+  const isCreator = (group.creator?._id || group.creator) === userId;
 
   const loadJoinRequests = useCallback(async () => {
     if (!isCreator) return;
@@ -39,7 +40,7 @@ function MembersPanel({ group, groupId, userId }) {
     try {
       await api.put(`/groups/${groupId}/requests/${requestUserId}/accept`);
       await loadJoinRequests();
-      window.location.reload();
+      if (onGroupUpdated) await onGroupUpdated();
     } catch (error) {
       alert(error.response?.data?.message || "Failed to accept request");
     }
@@ -54,8 +55,59 @@ function MembersPanel({ group, groupId, userId }) {
     }
   };
 
+  const handleRemoveMember = async (memberId) => {
+    const confirmed = window.confirm("Remove this member from the group?");
+    if (!confirmed) return;
+
+    try {
+      await api.put(`/groups/${groupId}/members/${memberId}/remove`);
+      if (onGroupUpdated) await onGroupUpdated();
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to remove member");
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    const confirmed = window.confirm("Leave this group?");
+    if (!confirmed) return;
+
+    try {
+      await api.put(`/groups/${groupId}/leave`);
+      alert("You left the group successfully");
+      navigate("/dashboard");
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to leave group");
+    }
+  };
+
   return (
     <Stack spacing={3}>
+      <Card sx={{ borderRadius: 4 }}>
+        <CardContent>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            justifyContent="space-between"
+            alignItems={{ xs: "stretch", sm: "center" }}
+            spacing={2}
+          >
+            <Box>
+              <Typography variant="h5" fontWeight="bold">
+                Group Membership
+              </Typography>
+              <Typography color="text.secondary">
+                Manage group members and membership actions.
+              </Typography>
+            </Box>
+
+            {!isCreator && (
+              <Button variant="outlined" color="error" onClick={handleLeaveGroup}>
+                Leave Group
+              </Button>
+            )}
+          </Stack>
+        </CardContent>
+      </Card>
+
       {isCreator && (
         <Card sx={{ borderRadius: 4 }}>
           <CardContent>
@@ -118,9 +170,7 @@ function MembersPanel({ group, groupId, userId }) {
                           size="small"
                           variant="contained"
                           color="success"
-                          onClick={() =>
-                            handleAcceptRequest(request.user._id)
-                          }
+                          onClick={() => handleAcceptRequest(request.user._id)}
                         >
                           Accept
                         </Button>
@@ -129,9 +179,7 @@ function MembersPanel({ group, groupId, userId }) {
                           size="small"
                           variant="outlined"
                           color="error"
-                          onClick={() =>
-                            handleRejectRequest(request.user._id)
-                          }
+                          onClick={() => handleRejectRequest(request.user._id)}
                         >
                           Reject
                         </Button>
@@ -152,32 +200,50 @@ function MembersPanel({ group, groupId, userId }) {
           </Typography>
 
           <Grid container spacing={2}>
-            {group.members?.map((member) => (
-              <Grid item xs={12} sm={6} md={4} key={member._id || member}>
-                <Paper sx={{ p: 2, borderRadius: 3 }}>
-                  <Stack direction="row" spacing={1.5} alignItems="center">
-                    <Avatar>
-                      {member.name?.charAt(0)?.toUpperCase() || "U"}
-                    </Avatar>
+            {group.members?.map((member) => {
+              const memberId = member._id || member;
+              const memberIsCreator =
+                (group.creator?._id || group.creator) === memberId;
 
-                    <Box>
-                      <Typography fontWeight="bold">
-                        {member.name || "Member"}
-                      </Typography>
+              return (
+                <Grid item xs={12} sm={6} md={4} key={memberId}>
+                  <Paper sx={{ p: 2, borderRadius: 3, height: "100%" }}>
+                    <Stack spacing={1.5}>
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <Avatar>
+                          {member.name?.charAt(0)?.toUpperCase() || "U"}
+                        </Avatar>
 
-                      <Typography variant="body2" color="text.secondary">
-                        {member.email || "No email available"}
-                      </Typography>
-                    </Box>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography fontWeight="bold" noWrap>
+                            {member.name || "Member"}
+                          </Typography>
 
-                    {(group.creator?._id || group.creator) ===
-                      (member._id || member) && (
-                      <Chip label="Creator" color="primary" size="small" />
-                    )}
-                  </Stack>
-                </Paper>
-              </Grid>
-            ))}
+                          <Typography variant="body2" color="text.secondary" noWrap>
+                            {member.email || "No email available"}
+                          </Typography>
+                        </Box>
+
+                        {memberIsCreator && (
+                          <Chip label="Creator" color="primary" size="small" />
+                        )}
+                      </Stack>
+
+                      {isCreator && !memberIsCreator && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                          onClick={() => handleRemoveMember(memberId)}
+                        >
+                          Remove Member
+                        </Button>
+                      )}
+                    </Stack>
+                  </Paper>
+                </Grid>
+              );
+            })}
           </Grid>
         </CardContent>
       </Card>
