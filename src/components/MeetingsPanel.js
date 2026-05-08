@@ -18,7 +18,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
-function MeetingsPanel({ groupId }) {
+function MeetingsPanel({ groupId, isGroupCreator = false }) {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userId = user?.id || user?._id;
 
@@ -105,6 +105,18 @@ function MeetingsPanel({ groupId }) {
     }
   };
 
+  const deleteMeeting = async (meetingId) => {
+    const confirmed = window.confirm("Delete this meeting detail from the panel?");
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/meetings/${meetingId}`);
+      await loadMeetings();
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to delete meeting");
+    }
+  };
+
   const formatDateTime = (date) => {
     if (!date) return "Instant meeting";
 
@@ -150,10 +162,7 @@ function MeetingsPanel({ groupId }) {
               >
                 Schedule
               </Button>
-              <Button
-                variant="contained"
-                onClick={() => createMeeting(true)}
-              >
+              <Button variant="contained" onClick={() => createMeeting(true)}>
                 Start Instant Meeting
               </Button>
             </Stack>
@@ -287,6 +296,16 @@ function MeetingsPanel({ groupId }) {
                         onClick={() => endMeeting(meeting._id)}
                       >
                         Mark as Ended
+                      </Button>
+                    )}
+
+                    {isGroupCreator && (
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => deleteMeeting(meeting._id)}
+                      >
+                        Delete Meeting Detail
                       </Button>
                     )}
                   </Stack>
