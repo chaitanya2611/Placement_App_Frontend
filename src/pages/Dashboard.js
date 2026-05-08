@@ -40,8 +40,8 @@ function Dashboard() {
 
   const handleOpen = () => setOpen(true);
 
-  const handleOpenChat = (group) => {
-    navigate(`/groups/${group._id}/chat`);
+  const handleOpenGroup = (group) => {
+    navigate(`/groups/${group._id}`);
   };
 
   const handleClose = () => {
@@ -266,9 +266,9 @@ function Dashboard() {
                         fullWidth
                         variant="contained"
                         sx={{ mt: 2 }}
-                        onClick={() => handleOpenChat(group)}
+                        onClick={() => handleOpenGroup(group)}
                       >
-                        Open Chat
+                        Open Workspace
                       </Button>
 
                       {isCreator(group) && (
