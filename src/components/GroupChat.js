@@ -31,7 +31,7 @@ import AddReactionIcon from "@mui/icons-material/AddReaction";
 
 const reactionOptions = ["👍", "❤️", "😂", "🔥", "👏", "😮"];
 
-function GroupChat({ group }) {
+function GroupChat({ group, embedded = false }) {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -261,48 +261,53 @@ function GroupChat({ group }) {
     <>
       <Box
         sx={{
-          height: "100vh",
+          height: embedded ? "100%" : "100vh",
+          minHeight: 0,
           display: "flex",
           flexDirection: "column",
           bgcolor: "#efeae2",
         }}
       >
-        <Box
-          sx={{
-            height: 70,
-            px: 2,
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            bgcolor: "#075e54",
-            color: "white",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-          }}
-        >
-          <IconButton
-            onClick={() => navigate("/dashboard")}
-            sx={{ color: "white" }}
+        {!embedded && (
+          <Box
+            sx={{
+              height: 70,
+              px: 2,
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              bgcolor: "#075e54",
+              color: "white",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              flexShrink: 0,
+            }}
           >
-            <ArrowBackIcon />
-          </IconButton>
+            <IconButton
+              onClick={() => navigate("/dashboard")}
+              sx={{ color: "white" }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
 
-          <Avatar sx={{ bgcolor: "#25d366", fontWeight: "bold" }}>
-            {group.title?.charAt(0)?.toUpperCase()}
-          </Avatar>
+            <Avatar sx={{ bgcolor: "#25d366", fontWeight: "bold" }}>
+              {group.title?.charAt(0)?.toUpperCase()}
+            </Avatar>
 
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography fontWeight="bold" noWrap>
-              {group.title}
-            </Typography>
-            <Typography variant="caption" sx={{ opacity: 0.85 }}>
-              Group discussion
-            </Typography>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography fontWeight="bold" noWrap>
+                {group.title}
+              </Typography>
+              <Typography variant="caption" sx={{ opacity: 0.85 }}>
+                Group discussion
+              </Typography>
+            </Box>
           </Box>
-        </Box>
+        )}
 
         <Box
           sx={{
             flex: 1,
+            minHeight: 0,
             overflowY: "auto",
             px: { xs: 1.2, md: 3 },
             py: 2,
@@ -546,6 +551,7 @@ function GroupChat({ group }) {
               borderLeft: "4px solid #075e54",
               borderRadius: 2,
               boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+              flexShrink: 0,
             }}
           >
             <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -574,6 +580,7 @@ function GroupChat({ group }) {
               bgcolor: "white",
               borderRadius: 3,
               boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+              flexShrink: 0,
             }}
           >
             <Box
@@ -607,6 +614,7 @@ function GroupChat({ group }) {
             alignItems: "center",
             gap: 1,
             bgcolor: "#f0f2f5",
+            flexShrink: 0,
           }}
         >
           <IconButton
