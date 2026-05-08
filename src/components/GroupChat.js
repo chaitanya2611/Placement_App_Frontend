@@ -14,6 +14,9 @@ import {
   Avatar,
   Dialog,
   DialogContent,
+  Menu,
+  MenuItem,
+  Tooltip,
 } from "@mui/material";
 
 import SendIcon from "@mui/icons-material/Send";
@@ -21,6 +24,9 @@ import ImageIcon from "@mui/icons-material/Image";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+
+const reactionOptions = ["👍", "❤️", "😂", "🔥", "👏", "😮"];
 
 function GroupChat({ group }) {
   const navigate = useNavigate();
@@ -33,6 +39,9 @@ function GroupChat({ group }) {
   const [preview, setPreview] = useState("");
   const [selectedImage, setSelectedImage] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [editingMessage, setEditingMessage] = useState(null);
 
   const bottomRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -67,8 +76,22 @@ function GroupChat({ group }) {
       }
     });
 
+    socket.on("messageUpdated", (updatedMessage) => {
+      setMessages((prev) =>
+        prev.map((message) =>
+          message._id === updatedMessage._id ? updatedMessage : message,
+        ),
+      );
+    });
+
+    socket.on("messageDeleted", ({ messageId }) => {
+      setMessages((prev) => prev.filter((message) => message._id !== messageId));
+    });
+
     return () => {
       socket.off("receiveMessage");
+      socket.off("messageUpdated");
+      socket.off("messageDeleted");
     };
   }, [group]);
 
@@ -82,13 +105,22 @@ function GroupChat({ group }) {
     );
   };
 
+  const formatReactionSummary = (reactions = []) => {
+    const counts = reactions.reduce((acc, reaction) => {
+      acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(counts);
+  };
+
   const handleImageChange = (e) => {
     const selectedImageFile = e.target.files[0];
     if (!selectedImageFile) return;
 
     if (
       !["image/jpeg", "image/png", "image/webp"].includes(
-        selectedImageFile.type
+        selectedImageFile.type,
       )
     ) {
       alert("Only JPG, PNG, and WEBP images are allowed");
@@ -113,8 +145,67 @@ function GroupChat({ group }) {
     }
   };
 
+  const handleReaction = async (messageId, emoji) => {
+    try {
+      await api.post(`/messages/${messageId}/reactions`, { emoji });
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to react");
+    }
+  };
+
+  const handleOpenMenu = (event, message) => {
+    setMenuAnchor(event.currentTarget);
+    setSelectedMessage(message);
+  };
+
+  const handleCloseMenu = () => {
+    setMenuAnchor(null);
+    setSelectedMessage(null);
+  };
+
+  const startEditMessage = () => {
+    if (!selectedMessage) return;
+
+    setEditingMessage(selectedMessage);
+    setText(selectedMessage.text || "");
+    handleCloseMenu();
+  };
+
+  const cancelEdit = () => {
+    setEditingMessage(null);
+    setText("");
+  };
+
+  const handleDeleteMessage = async () => {
+    if (!selectedMessage) return;
+
+    const confirmed = window.confirm("Delete this message?");
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/messages/${selectedMessage._id}`);
+      handleCloseMenu();
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to delete message");
+    }
+  };
+
   const handleSend = async () => {
     if (!text.trim() && !image) return;
+
+    if (editingMessage) {
+      try {
+        await api.put(`/messages/${editingMessage._id}`, {
+          text: text.trim(),
+        });
+
+        cancelEdit();
+      } catch (error) {
+        alert(error.response?.data?.message || "Failed to edit message");
+      }
+
+      return;
+    }
 
     if (image) {
       try {
@@ -228,13 +319,14 @@ function GroupChat({ group }) {
           ) : (
             messages.map((message) => {
               const mine = isMyMessage(message);
+              const reactionSummary = formatReactionSummary(message.reactions);
 
               return (
                 <Stack
                   key={message._id}
                   direction="row"
                   justifyContent={mine ? "flex-end" : "flex-start"}
-                  sx={{ mb: 1.3 }}
+                  sx={{ mb: 1.8 }}
                 >
                   {!mine && (
                     <Avatar
@@ -250,83 +342,161 @@ function GroupChat({ group }) {
                     </Avatar>
                   )}
 
-                  <Paper
-                    elevation={0}
+                  <Box
                     sx={{
-                      maxWidth: { xs: "78%", md: "60%" },
-                      px: 1.2,
-                      py: 0.8,
-                      borderRadius: mine
-                        ? "18px 18px 4px 18px"
-                        : "18px 18px 18px 4px",
-                      bgcolor: mine ? "#dcf8c6" : "#ffffff",
-                      color: "#111827",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+                      maxWidth: { xs: "82%", md: "62%" },
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: mine ? "flex-end" : "flex-start",
                     }}
                   >
-                    {!mine && (
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        width: "fit-content",
+                        maxWidth: "100%",
+                        px: 1.2,
+                        py: 0.8,
+                        pr: mine ? 4 : 1.2,
+                        borderRadius: mine
+                          ? "18px 18px 4px 18px"
+                          : "18px 18px 18px 4px",
+                        bgcolor: mine ? "#dcf8c6" : "#ffffff",
+                        color: "#111827",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+                        position: "relative",
+                      }}
+                    >
+                      {mine && (
+                        <IconButton
+                          size="small"
+                          onClick={(event) => handleOpenMenu(event, message)}
+                          sx={{
+                            position: "absolute",
+                            top: 2,
+                            right: 2,
+                            width: 26,
+                            height: 26,
+                            color: "text.secondary",
+                          }}
+                        >
+                          <MoreVertIcon fontSize="small" />
+                        </IconButton>
+                      )}
+
+                      {!mine && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            display: "block",
+                            fontWeight: "bold",
+                            color: "#075e54",
+                            mb: 0.3,
+                          }}
+                        >
+                          {message.sender?.name}
+                        </Typography>
+                      )}
+
+                      {message.imageUrl && (
+                        <Box
+                          component="img"
+                          src={message.imageUrl}
+                          alt="chat upload"
+                          onClick={() => setSelectedImage(message.imageUrl)}
+                          sx={{
+                            width: { xs: 220, sm: 260, md: 320 },
+                            maxWidth: "100%",
+                            height: { xs: 220, sm: 260, md: 320 },
+                            objectFit: "cover",
+                            borderRadius: 2.5,
+                            display: "block",
+                            mb: message.text ? 0.8 : 0,
+                            cursor: "pointer",
+                          }}
+                        />
+                      )}
+
+                      {message.text && (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontSize: 14.5,
+                            lineHeight: 1.45,
+                            whiteSpace: "pre-wrap",
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {message.text}
+                        </Typography>
+                      )}
+
                       <Typography
                         variant="caption"
                         sx={{
                           display: "block",
-                          fontWeight: "bold",
-                          color: "#075e54",
-                          mb: 0.3,
+                          mt: 0.3,
+                          fontSize: 10.5,
+                          color: "text.secondary",
+                          textAlign: "right",
                         }}
                       >
-                        {message.sender?.name}
+                        {message.isEdited ? "edited · " : ""}
+                        {new Date(message.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </Typography>
-                    )}
+                    </Paper>
 
-                    {message.imageUrl && (
-                      <Box
-                        component="img"
-                        src={message.imageUrl}
-                        alt="chat upload"
-                        onClick={() => setSelectedImage(message.imageUrl)}
+                    {reactionSummary.length > 0 && (
+                      <Stack
+                        direction="row"
+                        spacing={0.5}
                         sx={{
-                          width: { xs: 220, sm: 260, md: 320 },
-                          maxWidth: "100%",
-                          height: { xs: 220, sm: 260, md: 320 },
-                          objectFit: "cover",
-                          borderRadius: 2.5,
-                          display: "block",
-                          mb: message.text ? 0.8 : 0,
-                          cursor: "pointer",
-                        }}
-                      />
-                    )}
-
-                    {message.text && (
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontSize: 14.5,
-                          lineHeight: 1.45,
-                          whiteSpace: "pre-wrap",
-                          wordBreak: "break-word",
+                          mt: -0.4,
+                          px: 0.7,
+                          py: 0.2,
+                          borderRadius: 5,
+                          bgcolor: "white",
+                          boxShadow: "0 1px 4px rgba(0,0,0,0.16)",
+                          zIndex: 1,
                         }}
                       >
-                        {message.text}
-                      </Typography>
+                        {reactionSummary.map(([emoji, count]) => (
+                          <Typography key={emoji} fontSize={12}>
+                            {emoji} {count > 1 ? count : ""}
+                          </Typography>
+                        ))}
+                      </Stack>
                     )}
 
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        display: "block",
-                        mt: 0.3,
-                        fontSize: 10.5,
-                        color: "text.secondary",
-                        textAlign: "right",
-                      }}
+                    <Stack
+                      direction="row"
+                      spacing={0.4}
+                      sx={{ mt: 0.5, opacity: 0.85, flexWrap: "wrap" }}
                     >
-                      {new Date(message.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </Typography>
-                  </Paper>
+                      {reactionOptions.map((emoji) => (
+                        <Tooltip title={`React ${emoji}`} key={emoji}>
+                          <Button
+                            size="small"
+                            onClick={() => handleReaction(message._id, emoji)}
+                            sx={{
+                              minWidth: 28,
+                              width: 28,
+                              height: 24,
+                              p: 0,
+                              borderRadius: 4,
+                              bgcolor: "rgba(255,255,255,0.75)",
+                              fontSize: 13,
+                            }}
+                          >
+                            {emoji}
+                          </Button>
+                        </Tooltip>
+                      ))}
+                    </Stack>
+                  </Box>
                 </Stack>
               );
             })
@@ -334,6 +504,36 @@ function GroupChat({ group }) {
 
           <div ref={bottomRef} />
         </Box>
+
+        {editingMessage && (
+          <Box
+            sx={{
+              mx: 1.5,
+              mb: 1,
+              px: 1.5,
+              py: 1,
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              bgcolor: "white",
+              borderLeft: "4px solid #075e54",
+              borderRadius: 2,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+            }}
+          >
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography fontWeight="bold" fontSize={13} color="#075e54">
+                Editing message
+              </Typography>
+              <Typography variant="body2" color="text.secondary" noWrap>
+                {editingMessage.text}
+              </Typography>
+            </Box>
+            <IconButton onClick={cancelEdit} size="small">
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        )}
 
         {preview && (
           <Box
@@ -384,6 +584,7 @@ function GroupChat({ group }) {
         >
           <IconButton
             component="label"
+            disabled={Boolean(editingMessage)}
             sx={{
               bgcolor: "white",
               color: "#075e54",
@@ -403,7 +604,7 @@ function GroupChat({ group }) {
           <TextField
             fullWidth
             size="small"
-            placeholder="Message..."
+            placeholder={editingMessage ? "Edit message..." : "Message..."}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
@@ -441,6 +642,19 @@ function GroupChat({ group }) {
           </Button>
         </Box>
       </Box>
+
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={handleCloseMenu}
+      >
+        <MenuItem onClick={startEditMessage} disabled={!selectedMessage?.text}>
+          Edit
+        </MenuItem>
+        <MenuItem onClick={handleDeleteMessage} sx={{ color: "error.main" }}>
+          Delete
+        </MenuItem>
+      </Menu>
 
       <Dialog
         open={Boolean(selectedImage)}
