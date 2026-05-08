@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import GroupChatPage from "./pages/GroupChatPage";
+import GroupWorkspace from "./pages/GroupWorkspace";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -25,10 +25,10 @@ function App() {
         />
 
         <Route
-          path="/groups/:groupId/chat"
+          path="/groups/:groupId"
           element={
             <ProtectedRoute>
-              <GroupChatPage />
+              <GroupWorkspace />
             </ProtectedRoute>
           }
         />
