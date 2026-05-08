@@ -35,6 +35,7 @@ function McqPanel({ groupId }) {
   const [questions, setQuestions] = useState([]);
   const [topics, setTopics] = useState([]);
   const [selectedTopic, setSelectedTopic] = useState("All");
+  const [selectedStatus, setSelectedStatus] = useState("All");
   const [stats, setStats] = useState({
     totalAttempts: 0,
     correctAttempts: 0,
@@ -85,6 +86,17 @@ function McqPanel({ groupId }) {
     loadStats();
     loadTopics();
   }, [loadQuestions, loadStats, loadTopics]);
+
+  const filteredQuestions = questions.filter((question) => {
+    const attempted = Boolean(question.userAttempt);
+
+    if (selectedStatus === "Attempted") return attempted;
+    if (selectedStatus === "Not Attempted") return !attempted;
+    if (selectedStatus === "Correct") return question.userAttempt?.isCorrect === true;
+    if (selectedStatus === "Incorrect") return question.userAttempt?.isCorrect === false;
+
+    return true;
+  });
 
   const handleOptionChange = (index, value) => {
     const updatedOptions = [...form.options];
@@ -321,6 +333,19 @@ function McqPanel({ groupId }) {
                 </MenuItem>
               ))}
             </TextField>
+            <TextField
+              select
+              label="Filter Status"
+              value={selectedStatus}
+              onChange={(event) => setSelectedStatus(event.target.value)}
+              sx={{ minWidth: 190 }}
+            >
+              <MenuItem value="All">All Status</MenuItem>
+              <MenuItem value="Attempted">Attempted</MenuItem>
+              <MenuItem value="Not Attempted">Not Attempted</MenuItem>
+              <MenuItem value="Correct">Correct</MenuItem>
+              <MenuItem value="Incorrect">Incorrect</MenuItem>
+            </TextField>
           </Stack>
         </CardContent>
       </Card>
@@ -433,16 +458,16 @@ function McqPanel({ groupId }) {
         </Card>
       )}
 
-      {questions.length === 0 ? (
+      {filteredQuestions.length === 0 ? (
         <Card sx={{ borderRadius: 4 }}>
           <CardContent>
             <Typography color="text.secondary">
-              No MCQs found for this topic.
+              No MCQs found for the selected filters.
             </Typography>
           </CardContent>
         </Card>
       ) : (
-        questions.map((question, index) => {
+        filteredQuestions.map((question, index) => {
           const attempted = Boolean(question.userAttempt);
           const canManage = isQuestionCreator(question);
 
@@ -463,6 +488,9 @@ function McqPanel({ groupId }) {
                         label={question.userAttempt.isCorrect ? "Correct" : "Wrong"}
                         color={question.userAttempt.isCorrect ? "success" : "error"}
                       />
+                    )}
+                    {!attempted && (
+                      <Chip size="small" label="Not Attempted" color="default" />
                     )}
                     {canManage && (
                       <Chip size="small" label="Your MCQ" color="secondary" />
