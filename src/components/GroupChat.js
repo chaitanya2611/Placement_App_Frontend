@@ -17,6 +17,7 @@ import {
   Menu,
   MenuItem,
   Tooltip,
+  Chip,
 } from "@mui/material";
 
 import SendIcon from "@mui/icons-material/Send";
@@ -25,12 +26,12 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import EditIcon from "@mui/icons-material/Edit";
 
 const reactionOptions = ["👍", "❤️", "😂", "🔥", "👏", "😮"];
 
 function GroupChat({ group }) {
   const navigate = useNavigate();
-
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [messages, setMessages] = useState([]);
@@ -326,7 +327,7 @@ function GroupChat({ group }) {
                   key={message._id}
                   direction="row"
                   justifyContent={mine ? "flex-end" : "flex-start"}
-                  sx={{ mb: 1.8 }}
+                  sx={{ mb: 2.4 }}
                 >
                   {!mine && (
                     <Avatar
@@ -344,7 +345,7 @@ function GroupChat({ group }) {
 
                   <Box
                     sx={{
-                      maxWidth: { xs: "82%", md: "62%" },
+                      maxWidth: { xs: "86%", md: "64%" },
                       display: "flex",
                       flexDirection: "column",
                       alignItems: mine ? "flex-end" : "flex-start",
@@ -357,7 +358,7 @@ function GroupChat({ group }) {
                         maxWidth: "100%",
                         px: 1.2,
                         py: 0.8,
-                        pr: mine ? 4 : 1.2,
+                        pr: mine ? 4.5 : 1.2,
                         borderRadius: mine
                           ? "18px 18px 4px 18px"
                           : "18px 18px 18px 4px",
@@ -368,20 +369,27 @@ function GroupChat({ group }) {
                       }}
                     >
                       {mine && (
-                        <IconButton
-                          size="small"
-                          onClick={(event) => handleOpenMenu(event, message)}
-                          sx={{
-                            position: "absolute",
-                            top: 2,
-                            right: 2,
-                            width: 26,
-                            height: 26,
-                            color: "text.secondary",
-                          }}
-                        >
-                          <MoreVertIcon fontSize="small" />
-                        </IconButton>
+                        <Tooltip title="Edit or delete">
+                          <IconButton
+                            size="small"
+                            onClick={(event) => handleOpenMenu(event, message)}
+                            sx={{
+                              position: "absolute",
+                              top: 3,
+                              right: 3,
+                              width: 30,
+                              height: 30,
+                              color: "#075e54",
+                              bgcolor: "rgba(255,255,255,0.9)",
+                              border: "1px solid rgba(7,94,84,0.2)",
+                              "&:hover": {
+                                bgcolor: "white",
+                              },
+                            }}
+                          >
+                            <MoreVertIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       )}
 
                       {!mine && (
@@ -471,31 +479,39 @@ function GroupChat({ group }) {
                       </Stack>
                     )}
 
-                    <Stack
-                      direction="row"
-                      spacing={0.4}
-                      sx={{ mt: 0.5, opacity: 0.85, flexWrap: "wrap" }}
+                    <Box
+                      sx={{
+                        mt: 0.6,
+                        px: 0.8,
+                        py: 0.4,
+                        borderRadius: 5,
+                        bgcolor: "rgba(255,255,255,0.9)",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+                      }}
                     >
-                      {reactionOptions.map((emoji) => (
-                        <Tooltip title={`React ${emoji}`} key={emoji}>
-                          <Button
-                            size="small"
-                            onClick={() => handleReaction(message._id, emoji)}
-                            sx={{
-                              minWidth: 28,
-                              width: 28,
-                              height: 24,
-                              p: 0,
-                              borderRadius: 4,
-                              bgcolor: "rgba(255,255,255,0.75)",
-                              fontSize: 13,
-                            }}
-                          >
-                            {emoji}
-                          </Button>
-                        </Tooltip>
-                      ))}
-                    </Stack>
+                      <Stack direction="row" spacing={0.4} flexWrap="wrap">
+                        {reactionOptions.map((emoji) => (
+                          <Tooltip title={`React ${emoji}`} key={emoji}>
+                            <Button
+                              size="small"
+                              onClick={() => handleReaction(message._id, emoji)}
+                              sx={{
+                                minWidth: 30,
+                                width: 30,
+                                height: 26,
+                                p: 0,
+                                borderRadius: 4,
+                                fontSize: 15,
+                                bgcolor: "#f8fafc",
+                                border: "1px solid #e2e8f0",
+                              }}
+                            >
+                              {emoji}
+                            </Button>
+                          </Tooltip>
+                        ))}
+                      </Stack>
+                    </Box>
                   </Box>
                 </Stack>
               );
@@ -649,10 +665,10 @@ function GroupChat({ group }) {
         onClose={handleCloseMenu}
       >
         <MenuItem onClick={startEditMessage} disabled={!selectedMessage?.text}>
-          Edit
+          <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit message
         </MenuItem>
         <MenuItem onClick={handleDeleteMessage} sx={{ color: "error.main" }}>
-          Delete
+          <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Delete message
         </MenuItem>
       </Menu>
 
