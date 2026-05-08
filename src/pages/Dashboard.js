@@ -19,6 +19,7 @@ import {
   Grid,
   Chip,
   Stack,
+  Divider,
 } from "@mui/material";
 
 function Dashboard() {
@@ -124,6 +125,16 @@ function Dashboard() {
     });
   };
 
+  const formatActivityDate = (date) => {
+    if (!date) return "No activity yet";
+    return new Date(date).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -152,7 +163,7 @@ function Dashboard() {
 
           <Typography color="text.secondary" mb={4}>
             Create subject-wise groups, join groups created by others, and open
-            each group workspace for chat, MCQs, members, and resources.
+            each group workspace for chat, MCQs, leaderboard, members, and resources.
           </Typography>
 
           <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3 }}>
@@ -186,46 +197,81 @@ function Dashboard() {
                 </Card>
               </Grid>
             ) : (
-              myGroups.map((group) => (
-                <Grid item xs={12} md={6} key={group._id}>
-                  <Card sx={{ borderRadius: 4, height: "100%" }}>
-                    <CardContent sx={{ p: 3 }}>
-                      <Stack direction="row" justifyContent="space-between">
-                        <Typography variant="h6" fontWeight="bold">
-                          {group.title}
+              myGroups.map((group) => {
+                const stats = group.stats || {};
+
+                return (
+                  <Grid item xs={12} md={6} key={group._id}>
+                    <Card sx={{ borderRadius: 4, height: "100%" }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Stack direction="row" justifyContent="space-between" spacing={1}>
+                          <Typography variant="h6" fontWeight="bold">
+                            {group.title}
+                          </Typography>
+
+                          <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
+                            {isCreator(group) ? (
+                              <Chip label="Creator" color="primary" size="small" />
+                            ) : (
+                              <Chip label="Member" color="success" size="small" />
+                            )}
+
+                            {stats.pendingRequestsCount > 0 && (
+                              <Chip
+                                label={`${stats.pendingRequestsCount} requests`}
+                                color="warning"
+                                size="small"
+                              />
+                            )}
+                          </Stack>
+                        </Stack>
+
+                        <Typography color="text.secondary" mt={1}>
+                          {group.description || "No description added"}
                         </Typography>
 
-                        {isCreator(group) ? (
-                          <Chip label="Creator" color="primary" size="small" />
-                        ) : (
-                          <Chip label="Member" color="success" size="small" />
-                        )}
-                      </Stack>
+                        <Divider sx={{ my: 2 }} />
 
-                      <Typography color="text.secondary" mt={1}>
-                        {group.description || "No description added"}
-                      </Typography>
+                        <Grid container spacing={1.5}>
+                          <Grid item xs={6} sm={3}>
+                            <Chip fullWidth label={`${stats.membersCount || group.members?.length || 0} Members`} />
+                          </Grid>
+                          <Grid item xs={6} sm={3}>
+                            <Chip fullWidth color="primary" label={`${stats.mcqCount || 0} MCQs`} />
+                          </Grid>
+                          <Grid item xs={6} sm={3}>
+                            <Chip fullWidth color="success" label={`${stats.resourceCount || 0} Resources`} />
+                          </Grid>
+                          <Grid item xs={6} sm={3}>
+                            <Chip fullWidth color="secondary" label="Workspace" />
+                          </Grid>
+                        </Grid>
 
-                      <Typography variant="body2" mt={2}>
-                        Created by: {group.creator?.name || "Unknown"}
-                      </Typography>
+                        <Typography variant="body2" mt={2}>
+                          Created by: {group.creator?.name || "Unknown"}
+                        </Typography>
 
-                      <Typography variant="body2" color="text.secondary">
-                        Members: {group.members?.length || 0}
-                      </Typography>
+                        <Typography variant="body2" color="text.secondary" mt={1}>
+                          {stats.lastActivityText || "Group created"}
+                        </Typography>
 
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        sx={{ mt: 2 }}
-                        onClick={() => handleOpenGroup(group)}
-                      >
-                        Open Workspace
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))
+                        <Typography variant="caption" color="text.secondary">
+                          Last activity: {formatActivityDate(stats.lastActivityAt)}
+                        </Typography>
+
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          sx={{ mt: 2 }}
+                          onClick={() => handleOpenGroup(group)}
+                        >
+                          Open Workspace
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })
             )}
           </Grid>
 
