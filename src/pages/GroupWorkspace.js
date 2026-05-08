@@ -11,13 +11,19 @@ import {
   AppBar,
   Avatar,
   Box,
+  Button,
   CircularProgress,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
   Paper,
   Stack,
   Tab,
   Tabs,
+  TextField,
   Typography,
 } from "@mui/material";
 
@@ -32,6 +38,13 @@ function GroupWorkspace() {
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+  });
+
+  const isCreator = (group?.creator?._id || group?.creator) === userId;
 
   const loadGroup = useCallback(async () => {
     const groupRes = await api.get("/groups/my-groups");
@@ -61,6 +74,37 @@ function GroupWorkspace() {
 
     loadData();
   }, [loadGroup, navigate]);
+
+  const handleOpenEdit = () => {
+    setEditForm({
+      title: group.title || "",
+      description: group.description || "",
+    });
+    setEditOpen(true);
+  };
+
+  const handleCloseEdit = () => {
+    setEditOpen(false);
+    setEditForm({
+      title: "",
+      description: "",
+    });
+  };
+
+  const handleUpdateGroup = async () => {
+    if (!editForm.title.trim()) {
+      alert("Group title is required");
+      return;
+    }
+
+    try {
+      await api.put(`/groups/${groupId}`, editForm);
+      await loadGroup();
+      handleCloseEdit();
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to update group");
+    }
+  };
 
   if (loading) {
     return (
@@ -110,6 +154,12 @@ function GroupWorkspace() {
                 {group.members?.length || 0} members • Placement workspace
               </Typography>
             </Box>
+
+            {isCreator && (
+              <Button color="inherit" variant="outlined" onClick={handleOpenEdit}>
+                Edit Group
+              </Button>
+            )}
           </Stack>
         </Container>
       </AppBar>
@@ -172,6 +222,7 @@ function GroupWorkspace() {
               group={group}
               groupId={groupId}
               userId={userId}
+              onGroupUpdated={loadGroup}
             />
           </Box>
         )}
@@ -182,6 +233,38 @@ function GroupWorkspace() {
           </Box>
         )}
       </Container>
+
+      <Dialog open={editOpen} onClose={handleCloseEdit} fullWidth maxWidth="sm">
+        <DialogTitle>Edit Group</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Group Name"
+            value={editForm.title}
+            onChange={(event) =>
+              setEditForm({ ...editForm, title: event.target.value })
+            }
+            sx={{ mt: 2 }}
+          />
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Description"
+            value={editForm.description}
+            onChange={(event) =>
+              setEditForm({ ...editForm, description: event.target.value })
+            }
+            sx={{ mt: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEdit}>Cancel</Button>
+          <Button variant="contained" onClick={handleUpdateGroup}>
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
