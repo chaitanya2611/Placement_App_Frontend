@@ -34,7 +34,6 @@ function McqPanel({ groupId }) {
 
   const [questions, setQuestions] = useState([]);
   const [topics, setTopics] = useState([]);
-  const [leaderboard, setLeaderboard] = useState([]);
   const [selectedTopic, setSelectedTopic] = useState("All");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [stats, setStats] = useState({
@@ -76,28 +75,17 @@ function McqPanel({ groupId }) {
     }
   }, [groupId]);
 
-  const loadLeaderboard = useCallback(async () => {
-    try {
-      const res = await api.get(`/questions/leaderboard/${groupId}`);
-      setLeaderboard(res.data);
-    } catch (error) {
-      console.log(error);
-    }
-  }, [groupId]);
-
   const refreshMcqData = async () => {
     await loadTopics();
     await loadQuestions();
     await loadStats();
-    await loadLeaderboard();
   };
 
   useEffect(() => {
     loadQuestions();
     loadStats();
     loadTopics();
-    loadLeaderboard();
-  }, [loadQuestions, loadStats, loadTopics, loadLeaderboard]);
+  }, [loadQuestions, loadStats, loadTopics]);
 
   const filteredQuestions = questions.filter((question) => {
     const attempted = Boolean(question.userAttempt);
@@ -242,7 +230,6 @@ function McqPanel({ groupId }) {
 
       await loadQuestions();
       await loadStats();
-      await loadLeaderboard();
     } catch (error) {
       alert(error.response?.data?.message || "Failed to submit answer");
     }
@@ -360,57 +347,6 @@ function McqPanel({ groupId }) {
               <MenuItem value="Incorrect">Incorrect</MenuItem>
             </TextField>
           </Stack>
-        </CardContent>
-      </Card>
-
-      <Card sx={{ borderRadius: 4 }}>
-        <CardContent>
-          <Typography variant="h6" fontWeight="bold" mb={2}>
-            Group Leaderboard
-          </Typography>
-
-          {leaderboard.length === 0 ? (
-            <Typography color="text.secondary">
-              No attempts yet. Leaderboard will appear after members attempt MCQs.
-            </Typography>
-          ) : (
-            <Stack spacing={1.5}>
-              {leaderboard.map((student) => (
-                <Paper key={student.userId} sx={{ p: 2, borderRadius: 3, bgcolor: "#f8fafc" }}>
-                  <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    spacing={1.5}
-                    justifyContent="space-between"
-                    alignItems={{ xs: "stretch", sm: "center" }}
-                  >
-                    <Box>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Chip
-                          label={`#${student.rank}`}
-                          color={student.rank === 1 ? "success" : "default"}
-                          size="small"
-                        />
-                        <Typography fontWeight="bold">{student.name}</Typography>
-                        {student.userId === userId && (
-                          <Chip label="You" color="primary" size="small" />
-                        )}
-                      </Stack>
-                      <Typography variant="body2" color="text.secondary" mt={0.5}>
-                        {student.email}
-                      </Typography>
-                    </Box>
-
-                    <Stack direction="row" spacing={1} flexWrap="wrap">
-                      <Chip size="small" label={`${student.totalAttempts} attempted`} />
-                      <Chip size="small" color="success" label={`${student.correctAttempts} correct`} />
-                      <Chip size="small" color="error" label={`${student.wrongAttempts} wrong`} />
-                      <Chip size="small" color="primary" label={`${student.scorePercentage}%`} />
-                    </Stack>
-                  </Stack>
-                </Paper>
-              ))}
-            </Stack>
-          )}
         </CardContent>
       </Card>
 
