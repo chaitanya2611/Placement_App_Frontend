@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import GroupChat from "../components/GroupChat";
@@ -38,10 +38,10 @@ function Dashboard() {
   });
 
   const [open, setOpen] = useState(false);
-
-  const handleOpen = () => setOpen(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
+
+  const handleOpen = () => setOpen(true);
 
   const handleOpenChat = (group) => {
     setSelectedGroup(group);
@@ -87,14 +87,14 @@ function Dashboard() {
     }
   };
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     await fetchMyGroups();
     await fetchAllGroups();
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   useEffect(() => {
     if (!userId) return;
@@ -265,6 +265,7 @@ function Dashboard() {
                       <Typography variant="body2" color="text.secondary">
                         Members: {group.members?.length || 0}
                       </Typography>
+
                       <Button
                         fullWidth
                         variant="contained"
@@ -416,6 +417,7 @@ function Dashboard() {
             ))}
           </Grid>
         </Container>
+
         <GroupChat
           open={chatOpen}
           onClose={() => setChatOpen(false)}
