@@ -3,17 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 import GroupChat from "../components/GroupChat";
 import ResourcesPanel from "../components/ResourcesPanel";
+import McqPanel from "../components/McqPanel";
+import MembersPanel from "../components/MembersPanel";
 
 import {
   AppBar,
   Avatar,
   Box,
-  Card,
-  CardContent,
-  Chip,
   CircularProgress,
   Container,
-  Grid,
   IconButton,
   Paper,
   Stack,
@@ -106,6 +104,7 @@ function GroupWorkspace() {
               <Typography fontWeight="bold" noWrap>
                 {group.title}
               </Typography>
+
               <Typography variant="caption" sx={{ opacity: 0.85 }}>
                 {group.members?.length || 0} members • Placement workspace
               </Typography>
@@ -155,49 +154,17 @@ function GroupWorkspace() {
 
         {activeTab === 1 && (
           <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
-            <Card sx={{ borderRadius: 4 }}>
-              <CardContent>
-                <Typography variant="h5" fontWeight="bold">
-                  MCQs
-                </Typography>
-                <Typography color="text.secondary" mt={1}>
-                  MCQ section is temporarily simplified while Resources is being integrated.
-                </Typography>
-              </CardContent>
-            </Card>
+            <McqPanel groupId={groupId} />
           </Box>
         )}
 
         {activeTab === 2 && (
           <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
-            <Card sx={{ borderRadius: 4 }}>
-              <CardContent>
-                <Typography variant="h5" fontWeight="bold" mb={2}>
-                  Members
-                </Typography>
-
-                <Grid container spacing={2}>
-                  {group.members?.map((member) => (
-                    <Grid item xs={12} sm={6} md={4} key={member._id || member}>
-                      <Paper sx={{ p: 2, borderRadius: 3 }}>
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                          <Avatar>{member.name?.charAt(0)?.toUpperCase() || "U"}</Avatar>
-                          <Box>
-                            <Typography fontWeight="bold">{member.name || "Member"}</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {member.email || "No email available"}
-                            </Typography>
-                          </Box>
-                          {(group.creator?._id || group.creator) === (member._id || member) && (
-                            <Chip label="Creator" color="primary" size="small" />
-                          )}
-                        </Stack>
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              </CardContent>
-            </Card>
+            <MembersPanel
+              group={group}
+              groupId={groupId}
+              userId={userId}
+            />
           </Box>
         )}
 
