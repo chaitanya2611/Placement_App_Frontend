@@ -34,6 +34,9 @@ const emptyQuestion = {
 };
 
 function QuizPanel({ groupId }) {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const userId = user?.id || user?._id;
+
   const [quizzes, setQuizzes] = useState([]);
   const [mcqs, setMcqs] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -191,6 +194,26 @@ function QuizPanel({ groupId }) {
     }
   };
 
+  const deleteQuiz = async (quizId) => {
+    const confirmed = window.confirm("Delete this quiz? This will also delete all quiz attempts for it.");
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/quizzes/single/${quizId}`);
+      if (activeQuiz?._id === quizId) {
+        setActiveQuiz(null);
+      }
+      await loadQuizzes();
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to delete quiz");
+    }
+  };
+
+  const isQuizCreator = (quiz) => {
+    const creatorId = quiz.createdBy?._id || quiz.createdBy;
+    return creatorId === userId;
+  };
+
   const openQuiz = async (quizId) => {
     try {
       const res = await api.get(`/quizzes/single/${quizId}`);
@@ -241,6 +264,7 @@ function QuizPanel({ groupId }) {
 
   if (activeQuiz) {
     const attempted = Boolean(activeQuiz.userAttempt);
+    const canDeleteActiveQuiz = isQuizCreator(activeQuiz);
 
     return (
       <Stack spacing={3}>
@@ -263,7 +287,14 @@ function QuizPanel({ groupId }) {
                   )}
                 </Stack>
               </Box>
-              <Button variant="outlined" onClick={closeQuiz}>Back to Quizzes</Button>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                {canDeleteActiveQuiz && (
+                  <Button color="error" variant="outlined" onClick={() => deleteQuiz(activeQuiz._id)}>
+                    Delete Quiz
+                  </Button>
+                )}
+                <Button variant="outlined" onClick={closeQuiz}>Back to Quizzes</Button>
+              </Stack>
             </Stack>
           </CardContent>
         </Card>
@@ -601,54 +632,72 @@ function QuizPanel({ groupId }) {
         </Card>
       ) : (
         <Grid container spacing={2}>
-          {quizzes.map((quiz) => (
-            <Grid item xs={12} md={6} key={quiz._id}>
-              <Card sx={{ borderRadius: 4, height: "100%" }}>
-                <CardContent>
-                  <Stack spacing={1.5}>
-                    <Stack direction="row" justifyContent="space-between" spacing={1}>
-                      <Box>
-                        <Typography variant="h6" fontWeight="bold">
-                          {quiz.title}
-                        </Typography>
-                        <Typography color="text.secondary">
-                          {quiz.description || "No description"}
-                        </Typography>
-                      </Box>
-                      {quiz.userAttempt ? (
-                        <Chip label="Attempted" color="success" />
-                      ) : (
-                        <Chip label="Not Attempted" />
-                      )}
-                    </Stack>
+          {quizzes.map((quiz) => {
+            const canDeleteQuiz = isQuizCreator(quiz);
 
-                    <Stack direction="row" spacing={1} flexWrap="wrap">
-                      <Chip size="small" label={`${quiz.durationMinutes} min`} />
-                      <Chip size="small" label={`${quiz.questions.length} questions`} />
-                      <Chip size="small" color="primary" label={`${getTotalMarks(quiz)} marks`} />
-                      {quiz.allowNegativeMarking && (
-                        <Chip size="small" color="warning" label="Negative marking" />
-                      )}
-                    </Stack>
+            return (
+              <Grid item xs={12} md={6} key={quiz._id}>
+                <Card sx={{ borderRadius: 4, height: "100%" }}>
+                  <CardContent>
+                    <Stack spacing={1.5}>
+                      <Stack direction="row" justifyContent="space-between" spacing={1}>
+                        <Box>
+                          <Typography variant="h6" fontWeight="bold">
+                            {quiz.title}
+                          </Typography>
+                          <Typography color="text.secondary">
+                            {quiz.description || "No description"}
+                          </Typography>
+                        </Box>
+                        {quiz.userAttempt ? (
+                          <Chip label="Attempted" color="success" />
+                        ) : (
+                          <Chip label="Not Attempted" />
+                        )}
+                      </Stack>
 
-                    {quiz.userAttempt && (
-                      <Typography variant="body2" color="text.secondary">
-                        Your score: {quiz.userAttempt.score} / {quiz.userAttempt.totalMarks} ({quiz.userAttempt.percentage}%)
+                      <Stack direction="row" spacing={1} flexWrap="wrap">
+                        <Chip size="small" label={`${quiz.durationMinutes} min`} />
+                        <Chip size="small" label={`${quiz.questions.length} questions`} />
+                        <Chip size="small" color="primary" label={`${getTotalMarks(quiz)} marks`} />
+                        {quiz.allowNegativeMarking && (
+                          <Chip size="small" color="warning" label="Negative marking" />
+                        )}
+                        {canDeleteQuiz && <Chip size="small" color="secondary" label="Your Quiz" />}
+                      </Stack>
+
+                      {quiz.userAttempt && (
+                        <Typography variant="body2" color="text.secondary">
+                          Your score: {quiz.userAttempt.score} / {quiz.userAttempt.totalMarks} ({quiz.userAttempt.percentage}%)
+                        </Typography>
+                      )}
+
+                      <Typography variant="caption" color="text.secondary">
+                        Created by {quiz.createdBy?.name || "Unknown"}
                       </Typography>
-                    )}
 
-                    <Typography variant="caption" color="text.secondary">
-                      Created by {quiz.createdBy?.name || "Unknown"}
-                    </Typography>
+                      <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                        <Button fullWidth variant="contained" onClick={() => openQuiz(quiz._id)}>
+                          {quiz.userAttempt ? "View Result" : "Start Quiz"}
+                        </Button>
 
-                    <Button variant="contained" onClick={() => openQuiz(quiz._id)}>
-                      {quiz.userAttempt ? "View Result" : "Start Quiz"}
-                    </Button>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+                        {canDeleteQuiz && (
+                          <Button
+                            fullWidth
+                            variant="outlined"
+                            color="error"
+                            onClick={() => deleteQuiz(quiz._id)}
+                          >
+                            Delete Quiz
+                          </Button>
+                        )}
+                      </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
       )}
     </Stack>
