@@ -21,7 +21,21 @@ import {
   Stack,
   Divider,
   Paper,
+  Avatar,
 } from "@mui/material";
+
+const appGradient = "linear-gradient(135deg, #0f172a 0%, #1d4ed8 45%, #06b6d4 100%)";
+const softCard = {
+  borderRadius: 5,
+  height: "100%",
+  border: "1px solid rgba(148, 163, 184, 0.18)",
+  boxShadow: "0 18px 45px rgba(15, 23, 42, 0.08)",
+  transition: "0.25s ease",
+  "&:hover": {
+    transform: "translateY(-6px)",
+    boxShadow: "0 24px 60px rgba(15, 23, 42, 0.16)",
+  },
+};
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -177,8 +191,12 @@ function Dashboard() {
     }
 
     return (
-      <Stack direction="row" spacing={1} alignItems="center" mt={1} flexWrap="wrap">
-        <Chip size="small" label={`${pointers.length} description points`} />
+      <Stack direction="row" spacing={1} alignItems="center" mt={1.5} flexWrap="wrap">
+        <Chip
+          size="small"
+          label={`${pointers.length} description points`}
+          sx={{ bgcolor: "#e0f2fe", color: "#075985", fontWeight: 700 }}
+        />
         <Button size="small" variant="text" onClick={() => openDescriptionModal(group)}>
           View Description
         </Button>
@@ -244,207 +262,291 @@ function Dashboard() {
     navigate("/login");
   };
 
+  const totalMyMcqs = myGroups.reduce((sum, group) => sum + (group.stats?.mcqCount || 0), 0);
+  const totalMyResources = myGroups.reduce((sum, group) => sum + (group.stats?.resourceCount || 0), 0);
+
+  const renderGroupCard = (group, variant = "my") => {
+    const stats = group.stats || {};
+    const memberCount = stats.membersCount || group.members?.length || 0;
+
+    return (
+      <Card sx={softCard}>
+        <CardContent sx={{ p: 3 }}>
+          <Stack direction="row" justifyContent="space-between" spacing={1} alignItems="flex-start">
+            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+              <Avatar sx={{ bgcolor: "#1d4ed8", fontWeight: 900 }}>
+                {group.title?.charAt(0)?.toUpperCase() || "P"}
+              </Avatar>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="h6" fontWeight="900" noWrap>
+                  {group.title}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Created by {group.creator?.name || "Unknown"}
+                </Typography>
+              </Box>
+            </Stack>
+
+            <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
+              {isCreator(group) ? (
+                <Chip label="Creator" color="primary" size="small" />
+              ) : isMember(group) ? (
+                <Chip label="Member" color="success" size="small" />
+              ) : (
+                <Chip label="Public" size="small" />
+              )}
+
+              {stats.pendingRequestsCount > 0 && (
+                <Chip
+                  label={`${stats.pendingRequestsCount} requests`}
+                  color="warning"
+                  size="small"
+                />
+              )}
+            </Stack>
+          </Stack>
+
+          {renderDescriptionSummary(group)}
+
+          <Divider sx={{ my: 2 }} />
+
+          <Grid container spacing={1.2}>
+            <Grid item xs={6} sm={variant === "my" ? 3 : 6}>
+              <Paper sx={{ p: 1.25, borderRadius: 3, bgcolor: "#f8fafc" }}>
+                <Typography fontWeight={900}>{memberCount}</Typography>
+                <Typography variant="caption" color="text.secondary">Members</Typography>
+              </Paper>
+            </Grid>
+            {variant === "my" && (
+              <>
+                <Grid item xs={6} sm={3}>
+                  <Paper sx={{ p: 1.25, borderRadius: 3, bgcolor: "#eff6ff" }}>
+                    <Typography fontWeight={900}>{stats.mcqCount || 0}</Typography>
+                    <Typography variant="caption" color="text.secondary">MCQs</Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Paper sx={{ p: 1.25, borderRadius: 3, bgcolor: "#ecfdf5" }}>
+                    <Typography fontWeight={900}>{stats.resourceCount || 0}</Typography>
+                    <Typography variant="caption" color="text.secondary">Resources</Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Paper sx={{ p: 1.25, borderRadius: 3, bgcolor: "#fdf4ff" }}>
+                    <Typography fontWeight={900}>P2P</Typography>
+                    <Typography variant="caption" color="text.secondary">Workspace</Typography>
+                  </Paper>
+                </Grid>
+              </>
+            )}
+          </Grid>
+
+          {variant === "my" && (
+            <>
+              <Typography variant="body2" color="text.secondary" mt={2}>
+                {stats.lastActivityText || "Group created"}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Last activity: {formatActivityDate(stats.lastActivityAt)}
+              </Typography>
+            </>
+          )}
+
+          {variant === "my" ? (
+            <Button
+              fullWidth
+              variant="contained"
+              sx={{ mt: 2, borderRadius: 3, py: 1.1, fontWeight: 800 }}
+              onClick={() => handleOpenGroup(group)}
+            >
+              Open Workspace
+            </Button>
+          ) : isCreator(group) ? (
+            <Button fullWidth variant="outlined" disabled sx={{ mt: 2, borderRadius: 3 }}>
+              Your Group
+            </Button>
+          ) : isMember(group) ? (
+            <Button fullWidth variant="outlined" color="success" disabled sx={{ mt: 2, borderRadius: 3 }}>
+              Already Joined
+            </Button>
+          ) : hasPendingRequest(group) ? (
+            <Button fullWidth variant="outlined" disabled sx={{ mt: 2, borderRadius: 3 }}>
+              Request Pending
+            </Button>
+          ) : (
+            <Button
+              fullWidth
+              variant="contained"
+              sx={{ mt: 2, borderRadius: 3, py: 1.1, fontWeight: 800 }}
+              onClick={() => handleJoinRequest(group._id)}
+            >
+              Request to Join
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <>
-      <Box sx={{ minHeight: "100vh", bgcolor: "#f8fafc" }}>
-        <AppBar position="static" elevation={0}>
-          <Toolbar sx={{ justifyContent: "space-between" }}>
-            <Typography variant="h6" fontWeight="bold">
-              Placement Prep Groups
-            </Typography>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          bgcolor: "#eef2ff",
+          backgroundImage:
+            "radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), transparent 28%), radial-gradient(circle at top right, rgba(6, 182, 212, 0.18), transparent 26%)",
+        }}
+      >
+        <AppBar position="sticky" elevation={0} sx={{ bgcolor: "rgba(15, 23, 42, 0.92)", backdropFilter: "blur(14px)" }}>
+          <Toolbar sx={{ justifyContent: "space-between", py: 0.6 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Avatar sx={{ bgcolor: "#38bdf8", color: "#0f172a", fontWeight: 900 }}>
+                P2P
+              </Avatar>
+              <Box>
+                <Typography variant="h6" fontWeight="900" lineHeight={1}>
+                  prep2place
+                </Typography>
+                <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.72)" }}>
+                  Placement prep workspace
+                </Typography>
+              </Box>
+            </Stack>
 
-            <Button color="inherit" onClick={handleLogout}>
+            <Button color="inherit" onClick={handleLogout} sx={{ borderRadius: 3 }}>
               Logout
             </Button>
           </Toolbar>
         </AppBar>
 
-        <Container sx={{ py: 5 }}>
-          <Typography variant="h4" fontWeight="bold">
-            Hello, {user?.name || "Student"} 👋
-          </Typography>
-
-          <Typography color="text.secondary" mb={4}>
-            Create subject-wise groups, join groups created by others, and open
-            each group workspace for chat, MCQs, quizzes, meetings, leaderboard, members, and resources.
-          </Typography>
-
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3 }}>
-            <Button
-              variant="contained"
+        <Container sx={{ py: { xs: 3, md: 5 } }}>
+          <Paper
+            sx={{
+              p: { xs: 3, md: 5 },
+              borderRadius: 6,
+              color: "white",
+              background: appGradient,
+              boxShadow: "0 30px 80px rgba(30, 64, 175, 0.28)",
+              position: "relative",
+              overflow: "hidden",
+              mb: 4,
+            }}
+          >
+            <Box
               sx={{
-                borderRadius: 3,
-                px: 3,
-                py: 1,
-                fontWeight: "bold",
+                position: "absolute",
+                width: 220,
+                height: 220,
+                borderRadius: "50%",
+                bgcolor: "rgba(255,255,255,0.12)",
+                right: -70,
+                top: -70,
               }}
-              onClick={handleOpen}
-            >
-              + Create Group
-            </Button>
-          </Box>
+            />
+            <Grid container spacing={3} alignItems="center" sx={{ position: "relative" }}>
+              <Grid item xs={12} md={7}>
+                <Chip label="prep2place (P2P)" sx={{ bgcolor: "rgba(255,255,255,0.18)", color: "white", fontWeight: 800, mb: 2 }} />
+                <Typography variant="h3" fontWeight="900" sx={{ fontSize: { xs: 34, md: 48 } }}>
+                  Prepare together. Crack placements faster.
+                </Typography>
+                <Typography sx={{ mt: 1.5, color: "rgba(255,255,255,0.82)", maxWidth: 720 }}>
+                  Manage groups, chats, MCQs, quizzes, meetings, resources, and coding practice from one focused placement-prep workspace.
+                </Typography>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} mt={3}>
+                  <Button variant="contained" onClick={handleOpen} sx={{ bgcolor: "white", color: "#1d4ed8", borderRadius: 3, px: 3, fontWeight: 900, "&:hover": { bgcolor: "#e0f2fe" } }}>
+                    + Create Group
+                  </Button>
+                  <Button variant="outlined" sx={{ color: "white", borderColor: "rgba(255,255,255,0.55)", borderRadius: 3, px: 3, fontWeight: 800 }}>
+                    Explore Groups
+                  </Button>
+                </Stack>
+              </Grid>
+              <Grid item xs={12} md={5}>
+                <Grid container spacing={1.5}>
+                  <Grid item xs={6}>
+                    <Paper sx={{ p: 2, borderRadius: 4, bgcolor: "rgba(255,255,255,0.16)", color: "white", backdropFilter: "blur(12px)" }}>
+                      <Typography variant="h4" fontWeight="900">{myGroups.length}</Typography>
+                      <Typography variant="body2">My Groups</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Paper sx={{ p: 2, borderRadius: 4, bgcolor: "rgba(255,255,255,0.16)", color: "white", backdropFilter: "blur(12px)" }}>
+                      <Typography variant="h4" fontWeight="900">{allGroups.length}</Typography>
+                      <Typography variant="body2">Explore Groups</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Paper sx={{ p: 2, borderRadius: 4, bgcolor: "rgba(255,255,255,0.16)", color: "white", backdropFilter: "blur(12px)" }}>
+                      <Typography variant="h4" fontWeight="900">{totalMyMcqs}</Typography>
+                      <Typography variant="body2">MCQs</Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Paper sx={{ p: 2, borderRadius: 4, bgcolor: "rgba(255,255,255,0.16)", color: "white", backdropFilter: "blur(12px)" }}>
+                      <Typography variant="h4" fontWeight="900">{totalMyResources}</Typography>
+                      <Typography variant="body2">Resources</Typography>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Grid>
+          </Paper>
 
-          <Typography variant="h5" fontWeight="bold" mb={3}>
-            My Groups
-          </Typography>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+            <Box>
+              <Typography variant="h5" fontWeight="900">
+                My Groups
+              </Typography>
+              <Typography color="text.secondary">Continue learning with your joined workspaces.</Typography>
+            </Box>
+          </Stack>
 
           <Grid container spacing={3} mb={5}>
             {myGroups.length === 0 ? (
               <Grid item xs={12}>
-                <Card sx={{ borderRadius: 4 }}>
-                  <CardContent>
-                    <Typography color="text.secondary">
-                      You have not created or joined any group yet.
+                <Card sx={{ borderRadius: 5, border: "1px dashed #93c5fd" }}>
+                  <CardContent sx={{ textAlign: "center", py: 5 }}>
+                    <Typography fontWeight="900" variant="h6">No groups yet</Typography>
+                    <Typography color="text.secondary" mb={2}>
+                      Create or join a group to start your P2P placement preparation journey.
                     </Typography>
+                    <Button variant="contained" onClick={handleOpen} sx={{ borderRadius: 3 }}>
+                      Create First Group
+                    </Button>
                   </CardContent>
                 </Card>
               </Grid>
             ) : (
-              myGroups.map((group) => {
-                const stats = group.stats || {};
-
-                return (
-                  <Grid item xs={12} md={6} key={group._id}>
-                    <Card sx={{ borderRadius: 4, height: "100%" }}>
-                      <CardContent sx={{ p: 3 }}>
-                        <Stack direction="row" justifyContent="space-between" spacing={1}>
-                          <Typography variant="h6" fontWeight="bold">
-                            {group.title}
-                          </Typography>
-
-                          <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
-                            {isCreator(group) ? (
-                              <Chip label="Creator" color="primary" size="small" />
-                            ) : (
-                              <Chip label="Member" color="success" size="small" />
-                            )}
-
-                            {stats.pendingRequestsCount > 0 && (
-                              <Chip
-                                label={`${stats.pendingRequestsCount} requests`}
-                                color="warning"
-                                size="small"
-                              />
-                            )}
-                          </Stack>
-                        </Stack>
-
-                        {renderDescriptionSummary(group)}
-
-                        <Divider sx={{ my: 2 }} />
-
-                        <Grid container spacing={1.5}>
-                          <Grid item xs={6} sm={3}>
-                            <Chip fullWidth label={`${stats.membersCount || group.members?.length || 0} Members`} />
-                          </Grid>
-                          <Grid item xs={6} sm={3}>
-                            <Chip fullWidth color="primary" label={`${stats.mcqCount || 0} MCQs`} />
-                          </Grid>
-                          <Grid item xs={6} sm={3}>
-                            <Chip fullWidth color="success" label={`${stats.resourceCount || 0} Resources`} />
-                          </Grid>
-                          <Grid item xs={6} sm={3}>
-                            <Chip fullWidth color="secondary" label="Workspace" />
-                          </Grid>
-                        </Grid>
-
-                        <Typography variant="body2" mt={2}>
-                          Created by: {group.creator?.name || "Unknown"}
-                        </Typography>
-
-                        <Typography variant="body2" color="text.secondary" mt={1}>
-                          {stats.lastActivityText || "Group created"}
-                        </Typography>
-
-                        <Typography variant="caption" color="text.secondary">
-                          Last activity: {formatActivityDate(stats.lastActivityAt)}
-                        </Typography>
-
-                        <Button
-                          fullWidth
-                          variant="contained"
-                          sx={{ mt: 2 }}
-                          onClick={() => handleOpenGroup(group)}
-                        >
-                          Open Workspace
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                );
-              })
+              myGroups.map((group) => (
+                <Grid item xs={12} md={6} key={group._id}>
+                  {renderGroupCard(group, "my")}
+                </Grid>
+              ))
             )}
           </Grid>
 
-          <Typography variant="h5" fontWeight="bold" mb={3}>
-            Explore Groups
-          </Typography>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+            <Box>
+              <Typography variant="h5" fontWeight="900">
+                Explore Groups
+              </Typography>
+              <Typography color="text.secondary">Find active communities and request access.</Typography>
+            </Box>
+          </Stack>
 
           <Grid container spacing={3}>
             {allGroups.map((group) => (
               <Grid item xs={12} md={4} key={group._id}>
-                <Card
-                  sx={{
-                    borderRadius: 4,
-                    height: "100%",
-                    transition: "0.3s",
-                    "&:hover": {
-                      transform: "translateY(-5px)",
-                      boxShadow: 6,
-                    },
-                  }}
-                >
-                  <CardContent sx={{ p: 3 }}>
-                    <Typography variant="h6" fontWeight="bold">
-                      {group.title}
-                    </Typography>
-
-                    {renderDescriptionSummary(group)}
-
-                    <Typography variant="body2" mt={2}>
-                      Creator: {group.creator?.name || "Unknown"}
-                    </Typography>
-
-                    <Typography variant="body2" color="text.secondary" mb={2}>
-                      Members: {group.members?.length || 0}
-                    </Typography>
-
-                    {isCreator(group) ? (
-                      <Button fullWidth variant="outlined" disabled>
-                        Your Group
-                      </Button>
-                    ) : isMember(group) ? (
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        color="success"
-                        disabled
-                      >
-                        Already Joined
-                      </Button>
-                    ) : hasPendingRequest(group) ? (
-                      <Button fullWidth variant="outlined" disabled>
-                        Request Pending
-                      </Button>
-                    ) : (
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        onClick={() => handleJoinRequest(group._id)}
-                      >
-                        Request to Join
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
+                {renderGroupCard(group, "explore")}
               </Grid>
             ))}
           </Grid>
         </Container>
       </Box>
 
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-        <DialogTitle>Create New Group</DialogTitle>
+      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 5 } }}>
+        <DialogTitle sx={{ fontWeight: 900 }}>Create New P2P Group</DialogTitle>
 
         <DialogContent>
           <TextField
@@ -461,8 +563,8 @@ function Dashboard() {
             sx={{ mt: 2 }}
           />
 
-          <Paper sx={{ mt: 2, p: 2, borderRadius: 3, bgcolor: "#f8fafc" }}>
-            <Typography fontWeight="bold" mb={0.5}>
+          <Paper sx={{ mt: 2, p: 2, borderRadius: 4, bgcolor: "#f8fafc" }}>
+            <Typography fontWeight="900" mb={0.5}>
               Description Pointers
             </Typography>
             <Typography variant="body2" color="text.secondary" mb={2}>
@@ -490,6 +592,7 @@ function Dashboard() {
                     variant="outlined"
                     color="error"
                     onClick={() => removeDescriptionPointer(index)}
+                    sx={{ borderRadius: 3 }}
                   >
                     Remove
                   </Button>
@@ -497,17 +600,17 @@ function Dashboard() {
               ))}
             </Stack>
 
-            <Button sx={{ mt: 2 }} variant="outlined" onClick={addDescriptionPointer}>
+            <Button sx={{ mt: 2, borderRadius: 3 }} variant="outlined" onClick={addDescriptionPointer}>
               + Add Pointer
             </Button>
           </Paper>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={handleClose} sx={{ borderRadius: 3 }}>Cancel</Button>
 
-          <Button variant="contained" onClick={handleCreateGroup}>
-            Create
+          <Button variant="contained" onClick={handleCreateGroup} sx={{ borderRadius: 3, fontWeight: 800 }}>
+            Create Group
           </Button>
         </DialogActions>
       </Dialog>
@@ -517,8 +620,9 @@ function Dashboard() {
         onClose={closeDescriptionModal}
         fullWidth
         maxWidth="sm"
+        PaperProps={{ sx: { borderRadius: 5 } }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ fontWeight: 900 }}>
           {selectedDescriptionGroup?.title || "Group Description"}
         </DialogTitle>
         <DialogContent>
@@ -527,12 +631,13 @@ function Dashboard() {
           </Typography>
           {renderDescriptionPointersInModal(selectedDescriptionGroup?.description || "")}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDescriptionModal}>Close</Button>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={closeDescriptionModal} sx={{ borderRadius: 3 }}>Close</Button>
           {selectedDescriptionGroup && isMember(selectedDescriptionGroup) && (
             <Button
               variant="contained"
               onClick={() => handleOpenGroup(selectedDescriptionGroup)}
+              sx={{ borderRadius: 3, fontWeight: 800 }}
             >
               Open Workspace
             </Button>
