@@ -37,6 +37,8 @@ function Dashboard() {
   });
 
   const [open, setOpen] = useState(false);
+  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
+  const [selectedDescriptionGroup, setSelectedDescriptionGroup] = useState(null);
 
   const handleOpen = () => setOpen(true);
 
@@ -50,6 +52,16 @@ function Dashboard() {
       title: "",
       descriptionPointers: [""],
     });
+  };
+
+  const openDescriptionModal = (group) => {
+    setSelectedDescriptionGroup(group);
+    setDescriptionModalOpen(true);
+  };
+
+  const closeDescriptionModal = () => {
+    setSelectedDescriptionGroup(null);
+    setDescriptionModalOpen(false);
   };
 
   const fetchMyGroups = async () => {
@@ -153,36 +165,49 @@ function Dashboard() {
       .filter(Boolean);
   };
 
-  const renderDescriptionPointers = (description) => {
-    const pointers = getDescriptionList(description);
+  const renderDescriptionSummary = (group) => {
+    const pointers = getDescriptionList(group.description);
 
     if (pointers.length === 0) {
       return (
-        <Typography color="text.secondary" mt={1}>
+        <Typography color="text.secondary" variant="body2" mt={1}>
           No description added
         </Typography>
       );
     }
 
     return (
-      <Box component="ul" sx={{ pl: 2.5, mt: 1, mb: 0 }}>
-        {pointers.slice(0, 4).map((point, index) => (
-          <Typography
-            component="li"
-            key={`${point}-${index}`}
-            color="text.secondary"
-            variant="body2"
-            sx={{ mb: 0.4 }}
-          >
-            {point}
-          </Typography>
+      <Stack direction="row" spacing={1} alignItems="center" mt={1} flexWrap="wrap">
+        <Chip size="small" label={`${pointers.length} description points`} />
+        <Button size="small" variant="text" onClick={() => openDescriptionModal(group)}>
+          View Description
+        </Button>
+      </Stack>
+    );
+  };
+
+  const renderDescriptionPointersInModal = (description) => {
+    const pointers = getDescriptionList(description);
+
+    if (pointers.length === 0) {
+      return (
+        <Typography color="text.secondary">
+          No description added for this group.
+        </Typography>
+      );
+    }
+
+    return (
+      <Stack spacing={1.5} mt={1}>
+        {pointers.map((point, index) => (
+          <Paper key={`${point}-${index}`} sx={{ p: 1.5, borderRadius: 3, bgcolor: "#f8fafc" }}>
+            <Stack direction="row" spacing={1.5} alignItems="flex-start">
+              <Chip label={index + 1} size="small" color="primary" />
+              <Typography color="text.secondary">{point}</Typography>
+            </Stack>
+          </Paper>
         ))}
-        {pointers.length > 4 && (
-          <Typography component="li" color="text.secondary" variant="body2">
-            +{pointers.length - 4} more
-          </Typography>
-        )}
-      </Box>
+      </Stack>
     );
   };
 
@@ -304,7 +329,7 @@ function Dashboard() {
                           </Stack>
                         </Stack>
 
-                        {renderDescriptionPointers(group.description)}
+                        {renderDescriptionSummary(group)}
 
                         <Divider sx={{ my: 2 }} />
 
@@ -374,7 +399,7 @@ function Dashboard() {
                       {group.title}
                     </Typography>
 
-                    {renderDescriptionPointers(group.description)}
+                    {renderDescriptionSummary(group)}
 
                     <Typography variant="body2" mt={2}>
                       Creator: {group.creator?.name || "Unknown"}
@@ -484,6 +509,34 @@ function Dashboard() {
           <Button variant="contained" onClick={handleCreateGroup}>
             Create
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={descriptionModalOpen}
+        onClose={closeDescriptionModal}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>
+          {selectedDescriptionGroup?.title || "Group Description"}
+        </DialogTitle>
+        <DialogContent>
+          <Typography color="text.secondary" mb={1}>
+            Group description pointers
+          </Typography>
+          {renderDescriptionPointersInModal(selectedDescriptionGroup?.description || "")}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDescriptionModal}>Close</Button>
+          {selectedDescriptionGroup && isMember(selectedDescriptionGroup) && (
+            <Button
+              variant="contained"
+              onClick={() => handleOpenGroup(selectedDescriptionGroup)}
+            >
+              Open Workspace
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </>
