@@ -20,6 +20,7 @@ import {
   Chip,
   Stack,
   Divider,
+  Paper,
 } from "@mui/material";
 
 function Dashboard() {
@@ -32,7 +33,7 @@ function Dashboard() {
   const [allGroups, setAllGroups] = useState([]);
   const [form, setForm] = useState({
     title: "",
-    description: "",
+    descriptionPointers: [""],
   });
 
   const [open, setOpen] = useState(false);
@@ -47,7 +48,7 @@ function Dashboard() {
     setOpen(false);
     setForm({
       title: "",
-      description: "",
+      descriptionPointers: [""],
     });
   };
 
@@ -78,6 +79,12 @@ function Dashboard() {
     loadData();
   }, [loadData]);
 
+  const getCleanDescriptionPointers = () => {
+    return form.descriptionPointers
+      .map((point) => point.trim())
+      .filter(Boolean);
+  };
+
   const handleCreateGroup = async (e) => {
     e.preventDefault();
 
@@ -87,7 +94,10 @@ function Dashboard() {
     }
 
     try {
-      await api.post("/groups", form);
+      await api.post("/groups", {
+        title: form.title.trim(),
+        description: getCleanDescriptionPointers().join("\n"),
+      });
 
       handleClose();
       loadData();
@@ -135,6 +145,74 @@ function Dashboard() {
     });
   };
 
+  const getDescriptionList = (description) => {
+    if (!description?.trim()) return [];
+    return description
+      .split("\n")
+      .map((point) => point.replace(/^[-•]\s*/, "").trim())
+      .filter(Boolean);
+  };
+
+  const renderDescriptionPointers = (description) => {
+    const pointers = getDescriptionList(description);
+
+    if (pointers.length === 0) {
+      return (
+        <Typography color="text.secondary" mt={1}>
+          No description added
+        </Typography>
+      );
+    }
+
+    return (
+      <Box component="ul" sx={{ pl: 2.5, mt: 1, mb: 0 }}>
+        {pointers.slice(0, 4).map((point, index) => (
+          <Typography
+            component="li"
+            key={`${point}-${index}`}
+            color="text.secondary"
+            variant="body2"
+            sx={{ mb: 0.4 }}
+          >
+            {point}
+          </Typography>
+        ))}
+        {pointers.length > 4 && (
+          <Typography component="li" color="text.secondary" variant="body2">
+            +{pointers.length - 4} more
+          </Typography>
+        )}
+      </Box>
+    );
+  };
+
+  const updateDescriptionPointer = (index, value) => {
+    const updatedPointers = [...form.descriptionPointers];
+    updatedPointers[index] = value;
+    setForm({ ...form, descriptionPointers: updatedPointers });
+  };
+
+  const addDescriptionPointer = () => {
+    setForm({
+      ...form,
+      descriptionPointers: [...form.descriptionPointers, ""],
+    });
+  };
+
+  const removeDescriptionPointer = (index) => {
+    if (form.descriptionPointers.length === 1) {
+      setForm({ ...form, descriptionPointers: [""] });
+      return;
+    }
+
+    setForm({
+      ...form,
+      descriptionPointers: form.descriptionPointers.filter(
+        (_, pointerIndex) => pointerIndex !== index,
+      ),
+    });
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -163,7 +241,7 @@ function Dashboard() {
 
           <Typography color="text.secondary" mb={4}>
             Create subject-wise groups, join groups created by others, and open
-            each group workspace for chat, MCQs, leaderboard, members, and resources.
+            each group workspace for chat, MCQs, quizzes, meetings, leaderboard, members, and resources.
           </Typography>
 
           <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3 }}>
@@ -226,9 +304,7 @@ function Dashboard() {
                           </Stack>
                         </Stack>
 
-                        <Typography color="text.secondary" mt={1}>
-                          {group.description || "No description added"}
-                        </Typography>
+                        {renderDescriptionPointers(group.description)}
 
                         <Divider sx={{ my: 2 }} />
 
@@ -298,11 +374,9 @@ function Dashboard() {
                       {group.title}
                     </Typography>
 
-                    <Typography color="text.secondary" mt={1} mb={2}>
-                      {group.description || "No description added"}
-                    </Typography>
+                    {renderDescriptionPointers(group.description)}
 
-                    <Typography variant="body2">
+                    <Typography variant="body2" mt={2}>
                       Creator: {group.creator?.name || "Unknown"}
                     </Typography>
 
@@ -362,21 +436,46 @@ function Dashboard() {
             sx={{ mt: 2 }}
           />
 
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
-            label="Description"
-            placeholder="Example: Daily DSA practice group"
-            value={form.description}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                description: e.target.value,
-              })
-            }
-            sx={{ mt: 2 }}
-          />
+          <Paper sx={{ mt: 2, p: 2, borderRadius: 3, bgcolor: "#f8fafc" }}>
+            <Typography fontWeight="bold" mb={0.5}>
+              Description Pointers
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={2}>
+              Add short points such as goals, schedule, topics, and rules for the group.
+            </Typography>
+
+            <Stack spacing={1.5}>
+              {form.descriptionPointers.map((point, index) => (
+                <Stack
+                  key={index}
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={1}
+                  alignItems={{ xs: "stretch", sm: "center" }}
+                >
+                  <TextField
+                    fullWidth
+                    label={`Pointer ${index + 1}`}
+                    placeholder="Example: Daily DSA practice at 8 PM"
+                    value={point}
+                    onChange={(event) =>
+                      updateDescriptionPointer(index, event.target.value)
+                    }
+                  />
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={() => removeDescriptionPointer(index)}
+                  >
+                    Remove
+                  </Button>
+                </Stack>
+              ))}
+            </Stack>
+
+            <Button sx={{ mt: 2 }} variant="outlined" onClick={addDescriptionPointer}>
+              + Add Pointer
+            </Button>
+          </Paper>
         </DialogContent>
 
         <DialogActions>
