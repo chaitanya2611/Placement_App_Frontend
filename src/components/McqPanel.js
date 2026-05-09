@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import api from "../api";
 
 import {
+  Avatar,
   Box,
   Button,
   Card,
@@ -18,6 +19,13 @@ import {
 } from "@mui/material";
 
 import AddIcon from "@mui/icons-material/Add";
+import PsychologyIcon from "@mui/icons-material/Psychology";
+
+const panelCard = {
+  borderRadius: 5,
+  border: "1px solid rgba(148, 163, 184, 0.18)",
+  boxShadow: "0 18px 45px rgba(15, 23, 42, 0.08)",
+};
 
 const emptyMcqForm = {
   topic: "General",
@@ -252,7 +260,7 @@ function McqPanel({ groupId }) {
 
     if (optionIndex === question.correctOption) {
       return {
-        bgcolor: "#dcf8c6",
+        bgcolor: "#dcfce7",
         border: "2px solid #22c55e",
       };
     }
@@ -272,27 +280,33 @@ function McqPanel({ groupId }) {
 
   return (
     <Stack spacing={3}>
-      <Card sx={{ borderRadius: 4 }}>
-        <CardContent>
+      <Card sx={{ ...panelCard, background: "linear-gradient(135deg, #0f172a, #7c3aed)" }}>
+        <CardContent sx={{ p: 3, color: "white" }}>
           <Stack
             direction={{ xs: "column", sm: "row" }}
             justifyContent="space-between"
             alignItems={{ xs: "stretch", sm: "center" }}
             spacing={2}
           >
-            <Box>
-              <Typography variant="h5" fontWeight="bold">
-                Group MCQs
-              </Typography>
-              <Typography color="text.secondary">
-                Select an answer, submit it, and practice topic-wise questions.
-              </Typography>
-            </Box>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar sx={{ bgcolor: "rgba(255,255,255,0.18)", color: "white" }}>
+                <PsychologyIcon />
+              </Avatar>
+              <Box>
+                <Typography variant="h5" fontWeight="900">
+                  P2P MCQ Practice
+                </Typography>
+                <Typography sx={{ color: "rgba(255,255,255,0.78)" }}>
+                  Practice topic-wise questions, track attempts, and learn from explanations.
+                </Typography>
+              </Box>
+            </Stack>
 
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={startCreateMcq}
+              sx={{ bgcolor: "white", color: "#6d28d9", fontWeight: 900, borderRadius: 3, "&:hover": { bgcolor: "#ede9fe" } }}
             >
               Add MCQ
             </Button>
@@ -300,25 +314,28 @@ function McqPanel({ groupId }) {
         </CardContent>
       </Card>
 
-      <Card sx={{ borderRadius: 4 }}>
-        <CardContent>
+      <Card sx={panelCard}>
+        <CardContent sx={{ p: 3 }}>
           <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ xs: "stretch", md: "center" }}>
             <Box sx={{ flex: 1 }}>
-              <Typography fontWeight="bold">Your Score</Typography>
+              <Stack direction="row" spacing={1} alignItems="center" mb={0.75}>
+                <Typography fontWeight="900">Your MCQ Score</Typography>
+                <Chip
+                  label={`${stats.scorePercentage || 0}%`}
+                  color={(stats.scorePercentage || 0) >= 60 ? "success" : "warning"}
+                  size="small"
+                  sx={{ fontWeight: 900 }}
+                />
+              </Stack>
               <Typography variant="body2" color="text.secondary">
-                {stats.correctAttempts} correct out of {stats.totalAttempts} attempted
+                {stats.correctAttempts} correct • {stats.wrongAttempts} wrong • {stats.totalAttempts} attempted
               </Typography>
               <LinearProgress
                 variant="determinate"
                 value={stats.scorePercentage || 0}
-                sx={{ mt: 1, height: 8, borderRadius: 5 }}
+                sx={{ mt: 1.5, height: 10, borderRadius: 5 }}
               />
             </Box>
-            <Chip
-              label={`${stats.scorePercentage || 0}%`}
-              color={(stats.scorePercentage || 0) >= 60 ? "success" : "warning"}
-              sx={{ fontWeight: "bold" }}
-            />
             <TextField
               select
               label="Filter Topic"
@@ -351,9 +368,9 @@ function McqPanel({ groupId }) {
       </Card>
 
       {showForm && (
-        <Card sx={{ borderRadius: 4 }}>
-          <CardContent component="form" onSubmit={handleSaveMcq}>
-            <Typography variant="h6" fontWeight="bold" mb={2}>
+        <Card sx={panelCard}>
+          <CardContent component="form" onSubmit={handleSaveMcq} sx={{ p: 3 }}>
+            <Typography variant="h6" fontWeight="900" mb={2}>
               {editingQuestion ? "Edit MCQ" : "Create MCQ"}
             </Typography>
 
@@ -380,7 +397,7 @@ function McqPanel({ groupId }) {
 
             {!editingQuestion && (
               <>
-                <Button component="label" variant="outlined" sx={{ mb: 2 }}>
+                <Button component="label" variant="outlined" sx={{ mb: 2, borderRadius: 3 }}>
                   Upload Question Image
                   <input
                     hidden
@@ -449,8 +466,8 @@ function McqPanel({ groupId }) {
             />
 
             <Stack direction="row" spacing={1} justifyContent="flex-end" mt={2}>
-              <Button onClick={resetForm}>Cancel</Button>
-              <Button type="submit" variant="contained">
+              <Button onClick={resetForm} sx={{ borderRadius: 3 }}>Cancel</Button>
+              <Button type="submit" variant="contained" sx={{ borderRadius: 3, fontWeight: 800 }}>
                 {editingQuestion ? "Update MCQ" : "Save MCQ"}
               </Button>
             </Stack>
@@ -459,10 +476,11 @@ function McqPanel({ groupId }) {
       )}
 
       {filteredQuestions.length === 0 ? (
-        <Card sx={{ borderRadius: 4 }}>
-          <CardContent>
+        <Card sx={panelCard}>
+          <CardContent sx={{ textAlign: "center", py: 5 }}>
+            <Typography variant="h6" fontWeight="900">No MCQs found</Typography>
             <Typography color="text.secondary">
-              No MCQs found for the selected filters.
+              Try changing filters or add the first P2P MCQ for this group.
             </Typography>
           </CardContent>
         </Card>
@@ -472,47 +490,36 @@ function McqPanel({ groupId }) {
           const canManage = isQuestionCreator(question);
 
           return (
-            <Card key={question._id} sx={{ borderRadius: 4 }}>
-              <CardContent>
-                <Stack direction="row" justifyContent="space-between" spacing={1} mb={1}>
+            <Card key={question._id} sx={panelCard}>
+              <CardContent sx={{ p: 3 }}>
+                <Stack direction="row" justifyContent="space-between" spacing={1} mb={1.5}>
                   <Box>
-                    <Chip size="small" label={question.topic || "General"} color="primary" sx={{ mb: 1 }} />
-                    <Typography fontWeight="bold">
+                    <Stack direction="row" spacing={1} flexWrap="wrap" mb={1}>
+                      <Chip size="small" label={question.topic || "General"} color="primary" sx={{ fontWeight: 800 }} />
+                      {attempted ? (
+                        <Chip
+                          size="small"
+                          label={question.userAttempt.isCorrect ? "Correct" : "Wrong"}
+                          color={question.userAttempt.isCorrect ? "success" : "error"}
+                          sx={{ fontWeight: 800 }}
+                        />
+                      ) : (
+                        <Chip size="small" label="Not Attempted" color="default" />
+                      )}
+                      {canManage && <Chip size="small" label="Your MCQ" color="secondary" />}
+                    </Stack>
+                    <Typography fontWeight="900">
                       Q{index + 1}. {question.questionText}
                     </Typography>
                   </Box>
-                  <Stack direction="row" spacing={1} alignItems="flex-start">
-                    {attempted && (
-                      <Chip
-                        size="small"
-                        label={question.userAttempt.isCorrect ? "Correct" : "Wrong"}
-                        color={question.userAttempt.isCorrect ? "success" : "error"}
-                      />
-                    )}
-                    {!attempted && (
-                      <Chip size="small" label="Not Attempted" color="default" />
-                    )}
-                    {canManage && (
-                      <Chip size="small" label="Your MCQ" color="secondary" />
-                    )}
-                  </Stack>
                 </Stack>
 
                 {canManage && (
                   <Stack direction="row" spacing={1} mb={2}>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => startEditMcq(question)}
-                    >
+                    <Button size="small" variant="outlined" onClick={() => startEditMcq(question)} sx={{ borderRadius: 3 }}>
                       Edit
                     </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="error"
-                      onClick={() => handleDeleteMcq(question._id)}
-                    >
+                    <Button size="small" variant="outlined" color="error" onClick={() => handleDeleteMcq(question._id)} sx={{ borderRadius: 3 }}>
                       Delete
                     </Button>
                   </Stack>
@@ -525,10 +532,11 @@ function McqPanel({ groupId }) {
                     alt="question"
                     sx={{
                       width: "100%",
-                      maxWidth: 420,
-                      borderRadius: 3,
+                      maxWidth: 460,
+                      borderRadius: 4,
                       mb: 2,
                       objectFit: "cover",
+                      boxShadow: "0 12px 28px rgba(15, 23, 42, 0.12)",
                     }}
                   />
                 )}
@@ -537,16 +545,16 @@ function McqPanel({ groupId }) {
                   {question.options.map((option, optionIndex) => (
                     <Grid item xs={12} md={6} key={optionIndex}>
                       <Paper
-                        onClick={() =>
-                          !attempted && handleSelectAnswer(question._id, optionIndex)
-                        }
+                        onClick={() => !attempted && handleSelectAnswer(question._id, optionIndex)}
                         sx={{
-                          p: 1.5,
+                          p: 1.7,
                           borderRadius: 3,
+                          transition: "0.2s ease",
+                          "&:hover": !attempted ? { transform: "translateY(-2px)", boxShadow: 2 } : {},
                           ...getOptionStyle(question, optionIndex),
                         }}
                       >
-                        <Typography>
+                        <Typography fontWeight={selectedAnswers[question._id] === optionIndex ? 800 : 500}>
                           {String.fromCharCode(65 + optionIndex)}. {option}
                         </Typography>
                       </Paper>
@@ -556,10 +564,7 @@ function McqPanel({ groupId }) {
 
                 {!attempted && (
                   <Stack direction="row" justifyContent="flex-end" mt={2}>
-                    <Button
-                      variant="contained"
-                      onClick={() => handleSubmitAnswer(question._id)}
-                    >
+                    <Button variant="contained" onClick={() => handleSubmitAnswer(question._id)} sx={{ borderRadius: 3, fontWeight: 800 }}>
                       Submit Answer
                     </Button>
                   </Stack>
@@ -567,7 +572,7 @@ function McqPanel({ groupId }) {
 
                 {attempted && question.explanation && (
                   <Box sx={{ mt: 2, p: 2, bgcolor: "#f8fafc", borderRadius: 3 }}>
-                    <Typography fontWeight="bold">Explanation</Typography>
+                    <Typography fontWeight="900">Explanation</Typography>
                     <Typography color="text.secondary">{question.explanation}</Typography>
                   </Box>
                 )}
