@@ -16,6 +16,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Chip,
   CircularProgress,
   Container,
   Dialog,
@@ -125,7 +126,7 @@ function GroupWorkspace() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          bgcolor: "#f8fafc",
+          bgcolor: "#eef2ff",
         }}
       >
         <CircularProgress />
@@ -144,35 +145,49 @@ function GroupWorkspace() {
     <Box
       sx={{
         height: "100vh",
-        bgcolor: "#f8fafc",
+        bgcolor: "#eef2ff",
+        backgroundImage:
+          "radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 28%), radial-gradient(circle at top right, rgba(6, 182, 212, 0.12), transparent 26%)",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
       }}
     >
-      <AppBar position="static" elevation={0} sx={{ bgcolor: "#075e54", flexShrink: 0 }}>
+      <AppBar
+        position="static"
+        elevation={0}
+        sx={{
+          bgcolor: "rgba(15, 23, 42, 0.94)",
+          backdropFilter: "blur(14px)",
+          flexShrink: 0,
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
         <Container maxWidth="lg">
-          <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 1.2 }}>
+          <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 1.3 }}>
             <IconButton onClick={() => navigate("/dashboard")} sx={{ color: "white" }}>
               <ArrowBackIcon />
             </IconButton>
 
-            <Avatar sx={{ bgcolor: "#25d366", fontWeight: "bold" }}>
-              {group.title?.charAt(0)?.toUpperCase()}
+            <Avatar sx={{ bgcolor: "#38bdf8", color: "#0f172a", fontWeight: 900 }}>
+              P2P
             </Avatar>
 
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography fontWeight="bold" noWrap>
-                {group.title}
-              </Typography>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Typography fontWeight="900" noWrap>
+                  {group.title}
+                </Typography>
+                {codingEnabled && <Chip size="small" label="Coding ON" color="info" />}
+              </Stack>
 
-              <Typography variant="caption" sx={{ opacity: 0.85 }}>
-                {group.members?.length || 0} members • Placement workspace
+              <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.72)" }}>
+                prep2place workspace • {group.members?.length || 0} members
               </Typography>
             </Box>
 
             {isCreator && (
-              <Button color="inherit" variant="outlined" onClick={handleOpenEdit}>
+              <Button color="inherit" variant="outlined" onClick={handleOpenEdit} sx={{ borderRadius: 3 }}>
                 Edit Group
               </Button>
             )}
@@ -190,12 +205,29 @@ function GroupWorkspace() {
           flexDirection: "column",
         }}
       >
-        <Paper sx={{ borderRadius: 4, overflow: "hidden", mb: 2, flexShrink: 0 }}>
+        <Paper
+          sx={{
+            borderRadius: 5,
+            overflow: "hidden",
+            mb: 2,
+            flexShrink: 0,
+            boxShadow: "0 18px 45px rgba(15, 23, 42, 0.08)",
+            border: "1px solid rgba(148, 163, 184, 0.2)",
+          }}
+        >
           <Tabs
             value={activeTab}
             onChange={(event, value) => setActiveTab(value)}
             variant="scrollable"
             scrollButtons="auto"
+            sx={{
+              px: 1,
+              "& .MuiTab-root": {
+                fontWeight: 800,
+                textTransform: "none",
+                minHeight: 56,
+              },
+            }}
           >
             <Tab label="Chat" />
             <Tab label="MCQs" />
@@ -211,12 +243,13 @@ function GroupWorkspace() {
         {activeTab === 0 && (
           <Paper
             sx={{
-              borderRadius: 4,
+              borderRadius: 5,
               overflow: "hidden",
               flex: 1,
               minHeight: 0,
               display: "flex",
               flexDirection: "column",
+              boxShadow: "0 18px 45px rgba(15, 23, 42, 0.08)",
             }}
           >
             <GroupChat group={group} embedded />
@@ -271,8 +304,8 @@ function GroupWorkspace() {
         )}
       </Container>
 
-      <Dialog open={editOpen} onClose={handleCloseEdit} fullWidth maxWidth="sm">
-        <DialogTitle>Edit Group</DialogTitle>
+      <Dialog open={editOpen} onClose={handleCloseEdit} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 5 } }}>
+        <DialogTitle sx={{ fontWeight: 900 }}>Edit P2P Group</DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
@@ -310,9 +343,9 @@ function GroupWorkspace() {
             Coding is optional. Existing groups will show the Coding tab only after this is enabled by the group creator.
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEdit}>Cancel</Button>
-          <Button variant="contained" onClick={handleUpdateGroup}>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={handleCloseEdit} sx={{ borderRadius: 3 }}>Cancel</Button>
+          <Button variant="contained" onClick={handleUpdateGroup} sx={{ borderRadius: 3, fontWeight: 800 }}>
             Save Changes
           </Button>
         </DialogActions>
