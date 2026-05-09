@@ -18,6 +18,7 @@ import {
   MenuItem,
   Tooltip,
   Popover,
+  Chip,
 } from "@mui/material";
 
 import SendIcon from "@mui/icons-material/Send";
@@ -28,6 +29,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import AddReactionIcon from "@mui/icons-material/AddReaction";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 
 const reactionOptions = ["👍", "❤️", "😂", "🔥", "👏", "😮"];
 
@@ -104,9 +106,7 @@ function GroupChat({ group, embedded = false }) {
   }, [messages]);
 
   const isMyMessage = (message) => {
-    return (
-      message.sender?._id === user?.id || message.sender?._id === user?._id
-    );
+    return message.sender?._id === user?.id || message.sender?._id === user?._id;
   };
 
   const formatReactionSummary = (reactions = []) => {
@@ -122,11 +122,7 @@ function GroupChat({ group, embedded = false }) {
     const selectedImageFile = e.target.files[0];
     if (!selectedImageFile) return;
 
-    if (
-      !["image/jpeg", "image/png", "image/webp"].includes(
-        selectedImageFile.type,
-      )
-    ) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(selectedImageFile.type)) {
       alert("Only JPG, PNG, and WEBP images are allowed");
       return;
     }
@@ -265,40 +261,37 @@ function GroupChat({ group, embedded = false }) {
           minHeight: 0,
           display: "flex",
           flexDirection: "column",
-          bgcolor: "#efeae2",
+          bgcolor: "#eef2ff",
         }}
       >
         {!embedded && (
           <Box
             sx={{
-              height: 70,
+              height: 72,
               px: 2,
               display: "flex",
               alignItems: "center",
               gap: 1.5,
-              bgcolor: "#075e54",
+              background: "linear-gradient(135deg, #0f172a, #2563eb)",
               color: "white",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              boxShadow: "0 12px 28px rgba(15,23,42,0.18)",
               flexShrink: 0,
             }}
           >
-            <IconButton
-              onClick={() => navigate("/dashboard")}
-              sx={{ color: "white" }}
-            >
+            <IconButton onClick={() => navigate("/dashboard")} sx={{ color: "white" }}>
               <ArrowBackIcon />
             </IconButton>
 
-            <Avatar sx={{ bgcolor: "#25d366", fontWeight: "bold" }}>
-              {group.title?.charAt(0)?.toUpperCase()}
+            <Avatar sx={{ bgcolor: "rgba(255,255,255,0.18)", fontWeight: "bold" }}>
+              P2P
             </Avatar>
 
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography fontWeight="bold" noWrap>
+              <Typography fontWeight="900" noWrap>
                 {group.title}
               </Typography>
               <Typography variant="caption" sx={{ opacity: 0.85 }}>
-                Group discussion
+                prep2place group discussion
               </Typography>
             </Box>
           </Box>
@@ -312,25 +305,30 @@ function GroupChat({ group, embedded = false }) {
             px: { xs: 1.2, md: 3 },
             py: 2,
             background:
-              "linear-gradient(rgba(239,234,226,0.9), rgba(239,234,226,0.9))",
+              "radial-gradient(circle at top left, rgba(37,99,235,0.10), transparent 32%), radial-gradient(circle at bottom right, rgba(6,182,212,0.10), transparent 28%), #eef2ff",
           }}
         >
           {messages.length === 0 ? (
-            <Box
+            <Paper
               sx={{
                 mt: 6,
                 mx: "auto",
-                px: 2,
-                py: 1,
-                width: "fit-content",
+                p: 3,
+                width: "min(420px, 92%)",
                 borderRadius: 5,
-                bgcolor: "rgba(255,255,255,0.8)",
+                textAlign: "center",
+                boxShadow: "0 18px 45px rgba(15,23,42,0.10)",
+                border: "1px solid rgba(148,163,184,0.22)",
               }}
             >
-              <Typography color="text.secondary" fontSize={14}>
-                No messages yet. Start the conversation.
+              <Avatar sx={{ bgcolor: "#dbeafe", color: "#1d4ed8", mx: "auto", mb: 1.5 }}>
+                <ChatBubbleOutlineIcon />
+              </Avatar>
+              <Typography fontWeight="900">Start the P2P conversation</Typography>
+              <Typography color="text.secondary" fontSize={14} mt={0.5}>
+                Share doubts, resources, updates, and images with your group.
               </Typography>
-            </Box>
+            </Paper>
           ) : (
             messages.map((message) => {
               const mine = isMyMessage(message);
@@ -346,11 +344,13 @@ function GroupChat({ group, embedded = false }) {
                   {!mine && (
                     <Avatar
                       sx={{
-                        width: 28,
-                        height: 28,
-                        mr: 0.7,
+                        width: 32,
+                        height: 32,
+                        mr: 0.8,
                         fontSize: 13,
-                        bgcolor: "#128c7e",
+                        bgcolor: "#1d4ed8",
+                        fontWeight: 900,
+                        boxShadow: "0 8px 18px rgba(37,99,235,0.22)",
                       }}
                     >
                       {message.sender?.name?.charAt(0)?.toUpperCase()}
@@ -372,10 +372,11 @@ function GroupChat({ group, embedded = false }) {
                             size="small"
                             onClick={(event) => openReactionPicker(event, message)}
                             sx={{
-                              width: 28,
-                              height: 28,
-                              bgcolor: "rgba(255,255,255,0.8)",
-                              color: "#075e54",
+                              width: 30,
+                              height: 30,
+                              bgcolor: "rgba(255,255,255,0.92)",
+                              color: "#1d4ed8",
+                              boxShadow: "0 6px 14px rgba(15,23,42,0.10)",
                               "&:hover": { bgcolor: "white" },
                             }}
                           >
@@ -389,15 +390,18 @@ function GroupChat({ group, embedded = false }) {
                         sx={{
                           width: "fit-content",
                           maxWidth: "100%",
-                          px: 1.2,
-                          py: 0.8,
-                          pr: mine ? 4.5 : 1.2,
-                          borderRadius: mine
-                            ? "18px 18px 4px 18px"
-                            : "18px 18px 18px 4px",
-                          bgcolor: mine ? "#dcf8c6" : "#ffffff",
+                          px: 1.3,
+                          py: 0.9,
+                          pr: mine ? 4.5 : 1.3,
+                          borderRadius: mine ? "20px 20px 6px 20px" : "20px 20px 20px 6px",
+                          bgcolor: mine ? "#dbeafe" : "#ffffff",
                           color: "#111827",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+                          boxShadow: mine
+                            ? "0 10px 24px rgba(37,99,235,0.16)"
+                            : "0 10px 24px rgba(15,23,42,0.10)",
+                          border: mine
+                            ? "1px solid rgba(37,99,235,0.18)"
+                            : "1px solid rgba(148,163,184,0.18)",
                           position: "relative",
                         }}
                       >
@@ -408,13 +412,13 @@ function GroupChat({ group, embedded = false }) {
                               onClick={(event) => handleOpenMenu(event, message)}
                               sx={{
                                 position: "absolute",
-                                top: 3,
-                                right: 3,
+                                top: 4,
+                                right: 4,
                                 width: 30,
                                 height: 30,
-                                color: "#075e54",
-                                bgcolor: "rgba(255,255,255,0.9)",
-                                border: "1px solid rgba(7,94,84,0.2)",
+                                color: "#1d4ed8",
+                                bgcolor: "rgba(255,255,255,0.88)",
+                                border: "1px solid rgba(37,99,235,0.18)",
                                 "&:hover": { bgcolor: "white" },
                               }}
                             >
@@ -428,8 +432,8 @@ function GroupChat({ group, embedded = false }) {
                             variant="caption"
                             sx={{
                               display: "block",
-                              fontWeight: "bold",
-                              color: "#075e54",
+                              fontWeight: 900,
+                              color: "#1d4ed8",
                               mb: 0.3,
                             }}
                           >
@@ -448,7 +452,7 @@ function GroupChat({ group, embedded = false }) {
                               maxWidth: "100%",
                               height: { xs: 220, sm: 260, md: 320 },
                               objectFit: "cover",
-                              borderRadius: 2.5,
+                              borderRadius: 3,
                               display: "block",
                               mb: message.text ? 0.8 : 0,
                               cursor: "pointer",
@@ -494,10 +498,11 @@ function GroupChat({ group, embedded = false }) {
                             size="small"
                             onClick={(event) => openReactionPicker(event, message)}
                             sx={{
-                              width: 28,
-                              height: 28,
-                              bgcolor: "rgba(255,255,255,0.8)",
-                              color: "#075e54",
+                              width: 30,
+                              height: 30,
+                              bgcolor: "rgba(255,255,255,0.92)",
+                              color: "#1d4ed8",
+                              boxShadow: "0 6px 14px rgba(15,23,42,0.10)",
                               "&:hover": { bgcolor: "white" },
                             }}
                           >
@@ -513,11 +518,11 @@ function GroupChat({ group, embedded = false }) {
                         spacing={0.5}
                         sx={{
                           mt: -0.4,
-                          px: 0.7,
-                          py: 0.2,
+                          px: 0.75,
+                          py: 0.25,
                           borderRadius: 5,
                           bgcolor: "white",
-                          boxShadow: "0 1px 4px rgba(0,0,0,0.16)",
+                          boxShadow: "0 6px 16px rgba(15,23,42,0.14)",
                           zIndex: 1,
                         }}
                       >
@@ -548,14 +553,14 @@ function GroupChat({ group, embedded = false }) {
               alignItems: "center",
               gap: 1,
               bgcolor: "white",
-              borderLeft: "4px solid #075e54",
-              borderRadius: 2,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+              borderLeft: "4px solid #2563eb",
+              borderRadius: 3,
+              boxShadow: "0 10px 24px rgba(15,23,42,0.12)",
               flexShrink: 0,
             }}
           >
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography fontWeight="bold" fontSize={13} color="#075e54">
+              <Typography fontWeight="900" fontSize={13} color="#1d4ed8">
                 Editing message
               </Typography>
               <Typography variant="body2" color="text.secondary" noWrap>
@@ -578,8 +583,8 @@ function GroupChat({ group, embedded = false }) {
               alignItems: "center",
               gap: 1,
               bgcolor: "white",
-              borderRadius: 3,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+              borderRadius: 4,
+              boxShadow: "0 10px 24px rgba(15,23,42,0.12)",
               flexShrink: 0,
             }}
           >
@@ -587,18 +592,17 @@ function GroupChat({ group, embedded = false }) {
               component="img"
               src={preview}
               alt="preview"
-              sx={{
-                width: 64,
-                height: 64,
-                objectFit: "cover",
-                borderRadius: 2,
-                flexShrink: 0,
-              }}
+              sx={{ width: 64, height: 64, objectFit: "cover", borderRadius: 3, flexShrink: 0 }}
             />
 
-            <Typography variant="body2" sx={{ flex: 1 }}>
-              Image ready to send
-            </Typography>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body2" fontWeight="900">
+                Image ready to send
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Add a caption or send directly.
+              </Typography>
+            </Box>
 
             <IconButton color="error" onClick={removeImage}>
               <DeleteIcon />
@@ -609,11 +613,12 @@ function GroupChat({ group, embedded = false }) {
         <Box
           sx={{
             px: 1.2,
-            py: 1,
+            py: 1.1,
             display: "flex",
             alignItems: "center",
             gap: 1,
-            bgcolor: "#f0f2f5",
+            bgcolor: "rgba(248,250,252,0.96)",
+            borderTop: "1px solid rgba(148,163,184,0.18)",
             flexShrink: 0,
           }}
         >
@@ -622,8 +627,9 @@ function GroupChat({ group, embedded = false }) {
             disabled={Boolean(editingMessage)}
             sx={{
               bgcolor: "white",
-              color: "#075e54",
-              "&:hover": { bgcolor: "#e8f5e9" },
+              color: "#1d4ed8",
+              boxShadow: "0 8px 18px rgba(15,23,42,0.10)",
+              "&:hover": { bgcolor: "#eff6ff" },
             }}
           >
             <ImageIcon />
@@ -639,7 +645,7 @@ function GroupChat({ group, embedded = false }) {
           <TextField
             fullWidth
             size="small"
-            placeholder={editingMessage ? "Edit message..." : "Message..."}
+            placeholder={editingMessage ? "Edit message..." : "Message your P2P group..."}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
@@ -650,7 +656,8 @@ function GroupChat({ group, embedded = false }) {
                 borderRadius: 8,
                 bgcolor: "white",
                 px: 1,
-                "& fieldset": { border: "none" },
+                boxShadow: "0 8px 18px rgba(15,23,42,0.08)",
+                "& fieldset": { border: "1px solid rgba(148,163,184,0.18)" },
               },
             }}
           />
@@ -664,9 +671,10 @@ function GroupChat({ group, embedded = false }) {
               width: 46,
               height: 46,
               borderRadius: "50%",
-              bgcolor: "#25d366",
+              bgcolor: "#2563eb",
               color: "white",
-              "&:hover": { bgcolor: "#20bd5a" },
+              boxShadow: "0 10px 24px rgba(37,99,235,0.32)",
+              "&:hover": { bgcolor: "#1d4ed8" },
             }}
           >
             <SendIcon />
@@ -702,7 +710,7 @@ function GroupChat({ group, embedded = false }) {
             px: 1,
             py: 0.8,
             borderRadius: 5,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+            boxShadow: "0 18px 45px rgba(15,23,42,0.22)",
           },
         }}
       >
@@ -711,9 +719,7 @@ function GroupChat({ group, embedded = false }) {
             <Button
               key={emoji}
               size="small"
-              onClick={() =>
-                reactionMessage && handleReaction(reactionMessage._id, emoji)
-              }
+              onClick={() => reactionMessage && handleReaction(reactionMessage._id, emoji)}
               sx={{ minWidth: 34, fontSize: 20, borderRadius: 4 }}
             >
               {emoji}
