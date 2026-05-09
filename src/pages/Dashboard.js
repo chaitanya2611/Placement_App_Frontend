@@ -57,7 +57,6 @@ const glassCard = {
 
 function Dashboard() {
   const navigate = useNavigate();
-
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userId = user?.id || user?._id;
 
@@ -67,10 +66,36 @@ function Dashboard() {
     title: "",
     descriptionPointers: [""],
   });
-
   const [open, setOpen] = useState(false);
   const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
   const [selectedDescriptionGroup, setSelectedDescriptionGroup] = useState(null);
+
+  const fetchMyGroups = useCallback(async () => {
+    try {
+      const res = await api.get("/groups/my-groups");
+      setMyGroups(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  }, []);
+
+  const fetchAllGroups = useCallback(async () => {
+    try {
+      const res = await api.get("/groups/all");
+      setAllGroups(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  }, []);
+
+  const loadData = useCallback(async () => {
+    await fetchMyGroups();
+    await fetchAllGroups();
+  }, [fetchMyGroups, fetchAllGroups]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleOpen = () => setOpen(true);
 
@@ -80,10 +105,7 @@ function Dashboard() {
 
   const handleClose = () => {
     setOpen(false);
-    setForm({
-      title: "",
-      descriptionPointers: [""],
-    });
+    setForm({ title: "", descriptionPointers: [""] });
   };
 
   const openDescriptionModal = (group) => {
@@ -100,41 +122,12 @@ function Dashboard() {
     document.getElementById("explore-groups")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const fetchMyGroups = async () => {
-    try {
-      const res = await api.get("/groups/my-groups");
-      setMyGroups(res.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const fetchAllGroups = async () => {
-    try {
-      const res = await api.get("/groups/all");
-      setAllGroups(res.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const loadData = useCallback(async () => {
-    await fetchMyGroups();
-    await fetchAllGroups();
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   const getCleanDescriptionPointers = () => {
-    return form.descriptionPointers
-      .map((point) => point.trim())
-      .filter(Boolean);
+    return form.descriptionPointers.map((point) => point.trim()).filter(Boolean);
   };
 
-  const handleCreateGroup = async (e) => {
-    e.preventDefault();
+  const handleCreateGroup = async (event) => {
+    event.preventDefault();
 
     if (!form.title.trim()) {
       alert("Group title is required");
@@ -148,7 +141,7 @@ function Dashboard() {
       });
 
       handleClose();
-      loadData();
+      await loadData();
     } catch (error) {
       alert(error.response?.data?.message || "Failed to create group");
     }
@@ -158,15 +151,13 @@ function Dashboard() {
     try {
       await api.post(`/groups/${groupId}/request`);
       alert("Join request sent successfully");
-      fetchAllGroups();
+      await fetchAllGroups();
     } catch (error) {
       alert(error.response?.data?.message || "Failed to send request");
     }
   };
 
-  const isCreator = (group) => {
-    return group.creator?._id === userId;
-  };
+  const isCreator = (group) => group.creator?._id === userId;
 
   const isMember = (group) => {
     return group.members?.some((member) => {
@@ -206,7 +197,7 @@ function Dashboard() {
     if (pointers.length === 0) {
       return (
         <Typography color="text.secondary" variant="body2" mt={1}>
-          No description added
+          No mission added
         </Typography>
       );
     }
@@ -229,11 +220,7 @@ function Dashboard() {
     const pointers = getDescriptionList(description);
 
     if (pointers.length === 0) {
-      return (
-        <Typography color="text.secondary">
-          No description added for this group.
-        </Typography>
-      );
+      return <Typography color="text.secondary">No mission added for this squad.</Typography>;
     }
 
     return (
@@ -257,10 +244,7 @@ function Dashboard() {
   };
 
   const addDescriptionPointer = () => {
-    setForm({
-      ...form,
-      descriptionPointers: [...form.descriptionPointers, ""],
-    });
+    setForm({ ...form, descriptionPointers: [...form.descriptionPointers, ""] });
   };
 
   const removeDescriptionPointer = (index) => {
@@ -285,8 +269,14 @@ function Dashboard() {
 
   const totalMyMcqs = myGroups.reduce((sum, group) => sum + (group.stats?.mcqCount || 0), 0);
   const totalMyResources = myGroups.reduce((sum, group) => sum + (group.stats?.resourceCount || 0), 0);
-  const totalMembers = myGroups.reduce((sum, group) => sum + (group.stats?.membersCount || group.members?.length || 0), 0);
-  const momentumScore = Math.min(100, myGroups.length * 20 + totalMyMcqs * 2 + totalMyResources * 3);
+  const totalMembers = myGroups.reduce(
+    (sum, group) => sum + (group.stats?.membersCount || group.members?.length || 0),
+    0,
+  );
+  const momentumScore = Math.min(
+    100,
+    myGroups.length * 20 + totalMyMcqs * 2 + totalMyResources * 3,
+  );
 
   const questCards = [
     {
@@ -359,27 +349,36 @@ function Dashboard() {
             <Grid item xs={6} sm={variant === "my" ? 3 : 6}>
               <Paper sx={{ p: 1.25, borderRadius: 3, bgcolor: "#f8fafc" }}>
                 <Typography fontWeight={900}>{memberCount}</Typography>
-                <Typography variant="caption" color="text.secondary">Members</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Members
+                </Typography>
               </Paper>
             </Grid>
+
             {variant === "my" && (
               <>
                 <Grid item xs={6} sm={3}>
                   <Paper sx={{ p: 1.25, borderRadius: 3, bgcolor: "#eff6ff" }}>
                     <Typography fontWeight={900}>{stats.mcqCount || 0}</Typography>
-                    <Typography variant="caption" color="text.secondary">MCQs</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      MCQs
+                    </Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={6} sm={3}>
                   <Paper sx={{ p: 1.25, borderRadius: 3, bgcolor: "#ecfdf5" }}>
                     <Typography fontWeight={900}>{stats.resourceCount || 0}</Typography>
-                    <Typography variant="caption" color="text.secondary">Resources</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Resources
+                    </Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={6} sm={3}>
                   <Paper sx={{ p: 1.25, borderRadius: 3, bgcolor: "#fdf4ff" }}>
                     <Typography fontWeight={900}>P2P</Typography>
-                    <Typography variant="caption" color="text.secondary">Arena</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Arena
+                    </Typography>
                   </Paper>
                 </Grid>
               </>
@@ -610,9 +609,7 @@ function Dashboard() {
                     "&:hover": { transform: "translateY(-5px)", boxShadow: "0 24px 55px rgba(15,23,42,0.14)" },
                   }}
                 >
-                  <Avatar sx={{ bgcolor: quest.color, mb: 1.5 }}>
-                    {quest.icon}
-                  </Avatar>
+                  <Avatar sx={{ bgcolor: quest.color, mb: 1.5 }}>{quest.icon}</Avatar>
                   <Typography fontWeight="900" variant="h6">
                     {quest.title}
                   </Typography>
@@ -641,7 +638,9 @@ function Dashboard() {
                     <Avatar sx={{ background: neonGradient, mx: "auto", mb: 2 }}>
                       <RocketLaunchIcon />
                     </Avatar>
-                    <Typography fontWeight="900" variant="h6">No squads yet</Typography>
+                    <Typography fontWeight="900" variant="h6">
+                      No squads yet
+                    </Typography>
                     <Typography color="text.secondary" mb={2}>
                       Create or join a squad to start your P2P placement preparation journey.
                     </Typography>
@@ -681,14 +680,13 @@ function Dashboard() {
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 5 } }}>
         <DialogTitle sx={{ fontWeight: 900 }}>Launch New P2P Squad</DialogTitle>
-
         <DialogContent>
           <TextField
             fullWidth
             label="Squad Title"
             placeholder="Example: DSA Warriors, Aptitude Sprint, DBMS Masters"
             value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            onChange={(event) => setForm({ ...form, title: event.target.value })}
             sx={{ mt: 2 }}
           />
 
@@ -729,7 +727,9 @@ function Dashboard() {
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={handleClose} sx={{ borderRadius: 3 }}>Cancel</Button>
+          <Button onClick={handleClose} sx={{ borderRadius: 3 }}>
+            Cancel
+          </Button>
           <Button variant="contained" onClick={handleCreateGroup} sx={{ borderRadius: 3, fontWeight: 900, background: neonGradient }}>
             Launch Squad
           </Button>
@@ -753,7 +753,9 @@ function Dashboard() {
           {renderDescriptionPointersInModal(selectedDescriptionGroup?.description || "")}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={closeDescriptionModal} sx={{ borderRadius: 3 }}>Close</Button>
+          <Button onClick={closeDescriptionModal} sx={{ borderRadius: 3 }}>
+            Close
+          </Button>
           {selectedDescriptionGroup && isMember(selectedDescriptionGroup) && (
             <Button
               variant="contained"
