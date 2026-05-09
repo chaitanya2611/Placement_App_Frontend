@@ -22,9 +22,19 @@ import {
   Divider,
   Paper,
   Avatar,
+  LinearProgress,
 } from "@mui/material";
 
-const appGradient = "linear-gradient(135deg, #0f172a 0%, #1d4ed8 45%, #06b6d4 100%)";
+import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import GroupsIcon from "@mui/icons-material/Groups";
+import PsychologyIcon from "@mui/icons-material/Psychology";
+import CodeIcon from "@mui/icons-material/Code";
+
+const appGradient = "linear-gradient(135deg, #020617 0%, #1d4ed8 42%, #06b6d4 100%)";
+const neonGradient = "linear-gradient(135deg, #2563eb, #7c3aed, #06b6d4)";
+
 const softCard = {
   borderRadius: 5,
   height: "100%",
@@ -35,6 +45,14 @@ const softCard = {
     transform: "translateY(-6px)",
     boxShadow: "0 24px 60px rgba(15, 23, 42, 0.16)",
   },
+};
+
+const glassCard = {
+  borderRadius: 5,
+  bgcolor: "rgba(255,255,255,0.14)",
+  color: "white",
+  backdropFilter: "blur(14px)",
+  border: "1px solid rgba(255,255,255,0.18)",
 };
 
 function Dashboard() {
@@ -76,6 +94,10 @@ function Dashboard() {
   const closeDescriptionModal = () => {
     setSelectedDescriptionGroup(null);
     setDescriptionModalOpen(false);
+  };
+
+  const scrollToExplore = () => {
+    document.getElementById("explore-groups")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const fetchMyGroups = async () => {
@@ -156,7 +178,6 @@ function Dashboard() {
   const hasPendingRequest = (group) => {
     return group.joinRequests?.some((request) => {
       const requestUserId = request.user?._id || request.user;
-
       return requestUserId === userId && request.status === "pending";
     });
   };
@@ -194,11 +215,11 @@ function Dashboard() {
       <Stack direction="row" spacing={1} alignItems="center" mt={1.5} flexWrap="wrap">
         <Chip
           size="small"
-          label={`${pointers.length} description points`}
-          sx={{ bgcolor: "#e0f2fe", color: "#075985", fontWeight: 700 }}
+          label={`${pointers.length} mission points`}
+          sx={{ bgcolor: "#e0f2fe", color: "#075985", fontWeight: 800 }}
         />
         <Button size="small" variant="text" onClick={() => openDescriptionModal(group)}>
-          View Description
+          View Mission
         </Button>
       </Stack>
     );
@@ -264,6 +285,29 @@ function Dashboard() {
 
   const totalMyMcqs = myGroups.reduce((sum, group) => sum + (group.stats?.mcqCount || 0), 0);
   const totalMyResources = myGroups.reduce((sum, group) => sum + (group.stats?.resourceCount || 0), 0);
+  const totalMembers = myGroups.reduce((sum, group) => sum + (group.stats?.membersCount || group.members?.length || 0), 0);
+  const momentumScore = Math.min(100, myGroups.length * 20 + totalMyMcqs * 2 + totalMyResources * 3);
+
+  const questCards = [
+    {
+      icon: <GroupsIcon />,
+      title: "Build your squad",
+      text: "Create focused groups for DSA, aptitude, core subjects, or company prep.",
+      color: "#2563eb",
+    },
+    {
+      icon: <PsychologyIcon />,
+      title: "Practice daily",
+      text: "Use MCQs and quizzes to turn preparation into a repeatable habit.",
+      color: "#7c3aed",
+    },
+    {
+      icon: <CodeIcon />,
+      title: "Code together",
+      text: "Enable coding in serious groups and prepare like a real placement team.",
+      color: "#0891b2",
+    },
+  ];
 
   const renderGroupCard = (group, variant = "my") => {
     const stats = group.stats || {};
@@ -274,7 +318,7 @@ function Dashboard() {
         <CardContent sx={{ p: 3 }}>
           <Stack direction="row" justifyContent="space-between" spacing={1} alignItems="flex-start">
             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-              <Avatar sx={{ bgcolor: "#1d4ed8", fontWeight: 900 }}>
+              <Avatar sx={{ background: neonGradient, fontWeight: 900 }}>
                 {group.title?.charAt(0)?.toUpperCase() || "P"}
               </Avatar>
               <Box sx={{ minWidth: 0 }}>
@@ -289,11 +333,11 @@ function Dashboard() {
 
             <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
               {isCreator(group) ? (
-                <Chip label="Creator" color="primary" size="small" />
+                <Chip label="Captain" color="primary" size="small" sx={{ fontWeight: 800 }} />
               ) : isMember(group) ? (
-                <Chip label="Member" color="success" size="small" />
+                <Chip label="Member" color="success" size="small" sx={{ fontWeight: 800 }} />
               ) : (
-                <Chip label="Public" size="small" />
+                <Chip label="Open Squad" size="small" sx={{ fontWeight: 800 }} />
               )}
 
               {stats.pendingRequestsCount > 0 && (
@@ -301,6 +345,7 @@ function Dashboard() {
                   label={`${stats.pendingRequestsCount} requests`}
                   color="warning"
                   size="small"
+                  sx={{ fontWeight: 800 }}
                 />
               )}
             </Stack>
@@ -334,7 +379,7 @@ function Dashboard() {
                 <Grid item xs={6} sm={3}>
                   <Paper sx={{ p: 1.25, borderRadius: 3, bgcolor: "#fdf4ff" }}>
                     <Typography fontWeight={900}>P2P</Typography>
-                    <Typography variant="caption" color="text.secondary">Workspace</Typography>
+                    <Typography variant="caption" color="text.secondary">Arena</Typography>
                   </Paper>
                 </Grid>
               </>
@@ -356,14 +401,14 @@ function Dashboard() {
             <Button
               fullWidth
               variant="contained"
-              sx={{ mt: 2, borderRadius: 3, py: 1.1, fontWeight: 800 }}
+              sx={{ mt: 2, borderRadius: 3, py: 1.1, fontWeight: 900, background: neonGradient }}
               onClick={() => handleOpenGroup(group)}
             >
-              Open Workspace
+              Enter Arena
             </Button>
           ) : isCreator(group) ? (
             <Button fullWidth variant="outlined" disabled sx={{ mt: 2, borderRadius: 3 }}>
-              Your Group
+              Your Squad
             </Button>
           ) : isMember(group) ? (
             <Button fullWidth variant="outlined" color="success" disabled sx={{ mt: 2, borderRadius: 3 }}>
@@ -377,10 +422,10 @@ function Dashboard() {
             <Button
               fullWidth
               variant="contained"
-              sx={{ mt: 2, borderRadius: 3, py: 1.1, fontWeight: 800 }}
+              sx={{ mt: 2, borderRadius: 3, py: 1.1, fontWeight: 900, background: neonGradient }}
               onClick={() => handleJoinRequest(group._id)}
             >
-              Request to Join
+              Join Squad
             </Button>
           )}
         </CardContent>
@@ -395,13 +440,13 @@ function Dashboard() {
           minHeight: "100vh",
           bgcolor: "#eef2ff",
           backgroundImage:
-            "radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), transparent 28%), radial-gradient(circle at top right, rgba(6, 182, 212, 0.18), transparent 26%)",
+            "radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 28%), radial-gradient(circle at top right, rgba(124, 58, 237, 0.15), transparent 26%), radial-gradient(circle at 50% 45%, rgba(6, 182, 212, 0.10), transparent 35%)",
         }}
       >
-        <AppBar position="sticky" elevation={0} sx={{ bgcolor: "rgba(15, 23, 42, 0.92)", backdropFilter: "blur(14px)" }}>
+        <AppBar position="sticky" elevation={0} sx={{ bgcolor: "rgba(2, 6, 23, 0.9)", backdropFilter: "blur(16px)" }}>
           <Toolbar sx={{ justifyContent: "space-between", py: 0.6 }}>
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <Avatar sx={{ bgcolor: "#38bdf8", color: "#0f172a", fontWeight: 900 }}>
+              <Avatar sx={{ background: neonGradient, color: "white", fontWeight: 900 }}>
                 P2P
               </Avatar>
               <Box>
@@ -409,7 +454,7 @@ function Dashboard() {
                   prep2place
                 </Typography>
                 <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.72)" }}>
-                  Placement prep workspace
+                  Placement preparation arena
                 </Typography>
               </Box>
             </Stack>
@@ -424,81 +469,167 @@ function Dashboard() {
           <Paper
             sx={{
               p: { xs: 3, md: 5 },
-              borderRadius: 6,
+              borderRadius: 7,
               color: "white",
               background: appGradient,
-              boxShadow: "0 30px 80px rgba(30, 64, 175, 0.28)",
+              boxShadow: "0 35px 90px rgba(30, 64, 175, 0.34)",
               position: "relative",
               overflow: "hidden",
-              mb: 4,
+              mb: 3,
             }}
           >
             <Box
               sx={{
                 position: "absolute",
-                width: 220,
-                height: 220,
+                width: 260,
+                height: 260,
                 borderRadius: "50%",
-                bgcolor: "rgba(255,255,255,0.12)",
-                right: -70,
-                top: -70,
+                bgcolor: "rgba(255,255,255,0.11)",
+                right: -80,
+                top: -80,
               }}
             />
+            <Box
+              sx={{
+                position: "absolute",
+                width: 180,
+                height: 180,
+                borderRadius: "50%",
+                bgcolor: "rgba(56,189,248,0.18)",
+                left: "42%",
+                bottom: -90,
+              }}
+            />
+
             <Grid container spacing={3} alignItems="center" sx={{ position: "relative" }}>
               <Grid item xs={12} md={7}>
-                <Chip label="prep2place (P2P)" sx={{ bgcolor: "rgba(255,255,255,0.18)", color: "white", fontWeight: 800, mb: 2 }} />
-                <Typography variant="h3" fontWeight="900" sx={{ fontSize: { xs: 34, md: 48 } }}>
-                  Prepare together. Crack placements faster.
+                <Chip
+                  icon={<AutoAwesomeIcon />}
+                  label="Your placement preparation arena"
+                  sx={{ bgcolor: "rgba(255,255,255,0.18)", color: "white", fontWeight: 900, mb: 2 }}
+                />
+                <Typography variant="h3" fontWeight="900" sx={{ fontSize: { xs: 34, md: 52 }, letterSpacing: -1 }}>
+                  Prep with your squad. Win your placement game.
                 </Typography>
-                <Typography sx={{ mt: 1.5, color: "rgba(255,255,255,0.82)", maxWidth: 720 }}>
-                  Manage groups, chats, MCQs, quizzes, meetings, resources, and coding practice from one focused placement-prep workspace.
+                <Typography sx={{ mt: 1.5, color: "rgba(255,255,255,0.84)", maxWidth: 720, fontSize: 17 }}>
+                  prep2place turns group study into a placement mission with chats, MCQs, quizzes, meetings, resources, and coding practice in one exciting workspace.
                 </Typography>
+
+                <Stack direction="row" spacing={1} mt={2} flexWrap="wrap">
+                  <Chip label="DSA Squads" sx={{ bgcolor: "rgba(255,255,255,0.16)", color: "white" }} />
+                  <Chip label="MCQ Battles" sx={{ bgcolor: "rgba(255,255,255,0.16)", color: "white" }} />
+                  <Chip label="Quiz Challenges" sx={{ bgcolor: "rgba(255,255,255,0.16)", color: "white" }} />
+                  <Chip label="Meet + Code" sx={{ bgcolor: "rgba(255,255,255,0.16)", color: "white" }} />
+                </Stack>
+
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} mt={3}>
-                  <Button variant="contained" onClick={handleOpen} sx={{ bgcolor: "white", color: "#1d4ed8", borderRadius: 3, px: 3, fontWeight: 900, "&:hover": { bgcolor: "#e0f2fe" } }}>
-                    + Create Group
+                  <Button
+                    variant="contained"
+                    startIcon={<RocketLaunchIcon />}
+                    onClick={handleOpen}
+                    sx={{ bgcolor: "white", color: "#1d4ed8", borderRadius: 4, px: 3, py: 1.15, fontWeight: 900, boxShadow: "0 18px 40px rgba(255,255,255,0.20)", "&:hover": { bgcolor: "#e0f2fe" } }}
+                  >
+                    Launch New Squad
                   </Button>
-                  <Button variant="outlined" sx={{ color: "white", borderColor: "rgba(255,255,255,0.55)", borderRadius: 3, px: 3, fontWeight: 800 }}>
-                    Explore Groups
+                  <Button
+                    variant="outlined"
+                    onClick={scrollToExplore}
+                    sx={{ color: "white", borderColor: "rgba(255,255,255,0.55)", borderRadius: 4, px: 3, py: 1.15, fontWeight: 900 }}
+                  >
+                    Explore Squads
                   </Button>
                 </Stack>
               </Grid>
+
               <Grid item xs={12} md={5}>
-                <Grid container spacing={1.5}>
-                  <Grid item xs={6}>
-                    <Paper sx={{ p: 2, borderRadius: 4, bgcolor: "rgba(255,255,255,0.16)", color: "white", backdropFilter: "blur(12px)" }}>
-                      <Typography variant="h4" fontWeight="900">{myGroups.length}</Typography>
-                      <Typography variant="body2">My Groups</Typography>
-                    </Paper>
+                <Stack spacing={1.5}>
+                  <Paper sx={{ ...glassCard, p: 2.2 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                      <Box>
+                        <Typography fontWeight="900">P2P Momentum</Typography>
+                        <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.72)" }}>
+                          Your preparation activity meter
+                        </Typography>
+                      </Box>
+                      <Avatar sx={{ bgcolor: "rgba(255,255,255,0.18)", color: "white" }}>
+                        <EmojiEventsIcon />
+                      </Avatar>
+                    </Stack>
+                    <LinearProgress
+                      variant="determinate"
+                      value={momentumScore}
+                      sx={{ height: 10, borderRadius: 6, bgcolor: "rgba(255,255,255,0.18)", "& .MuiLinearProgress-bar": { bgcolor: "#facc15" } }}
+                    />
+                    <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.8)" }}>
+                      {momentumScore}% powered up
+                    </Typography>
+                  </Paper>
+
+                  <Grid container spacing={1.5}>
+                    <Grid item xs={6}>
+                      <Paper sx={{ ...glassCard, p: 2 }}>
+                        <Typography variant="h4" fontWeight="900">{myGroups.length}</Typography>
+                        <Typography variant="body2">My Squads</Typography>
+                      </Paper>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Paper sx={{ ...glassCard, p: 2 }}>
+                        <Typography variant="h4" fontWeight="900">{allGroups.length}</Typography>
+                        <Typography variant="body2">Open Squads</Typography>
+                      </Paper>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Paper sx={{ ...glassCard, p: 2 }}>
+                        <Typography variant="h4" fontWeight="900">{totalMyMcqs}</Typography>
+                        <Typography variant="body2">MCQs</Typography>
+                      </Paper>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Paper sx={{ ...glassCard, p: 2 }}>
+                        <Typography variant="h4" fontWeight="900">{totalMembers}</Typography>
+                        <Typography variant="body2">Teammates</Typography>
+                      </Paper>
+                    </Grid>
                   </Grid>
-                  <Grid item xs={6}>
-                    <Paper sx={{ p: 2, borderRadius: 4, bgcolor: "rgba(255,255,255,0.16)", color: "white", backdropFilter: "blur(12px)" }}>
-                      <Typography variant="h4" fontWeight="900">{allGroups.length}</Typography>
-                      <Typography variant="body2">Explore Groups</Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Paper sx={{ p: 2, borderRadius: 4, bgcolor: "rgba(255,255,255,0.16)", color: "white", backdropFilter: "blur(12px)" }}>
-                      <Typography variant="h4" fontWeight="900">{totalMyMcqs}</Typography>
-                      <Typography variant="body2">MCQs</Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Paper sx={{ p: 2, borderRadius: 4, bgcolor: "rgba(255,255,255,0.16)", color: "white", backdropFilter: "blur(12px)" }}>
-                      <Typography variant="h4" fontWeight="900">{totalMyResources}</Typography>
-                      <Typography variant="body2">Resources</Typography>
-                    </Paper>
-                  </Grid>
-                </Grid>
+                </Stack>
               </Grid>
             </Grid>
           </Paper>
 
+          <Grid container spacing={2.5} mb={4}>
+            {questCards.map((quest) => (
+              <Grid item xs={12} md={4} key={quest.title}>
+                <Paper
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 5,
+                    height: "100%",
+                    border: "1px solid rgba(148,163,184,0.18)",
+                    boxShadow: "0 18px 45px rgba(15,23,42,0.08)",
+                    transition: "0.25s ease",
+                    "&:hover": { transform: "translateY(-5px)", boxShadow: "0 24px 55px rgba(15,23,42,0.14)" },
+                  }}
+                >
+                  <Avatar sx={{ bgcolor: quest.color, mb: 1.5 }}>
+                    {quest.icon}
+                  </Avatar>
+                  <Typography fontWeight="900" variant="h6">
+                    {quest.title}
+                  </Typography>
+                  <Typography color="text.secondary" mt={0.5}>
+                    {quest.text}
+                  </Typography>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+
           <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
             <Box>
               <Typography variant="h5" fontWeight="900">
-                My Groups
+                My Squads
               </Typography>
-              <Typography color="text.secondary">Continue learning with your joined workspaces.</Typography>
+              <Typography color="text.secondary">Continue your placement mission with active workspaces.</Typography>
             </Box>
           </Stack>
 
@@ -507,12 +638,15 @@ function Dashboard() {
               <Grid item xs={12}>
                 <Card sx={{ borderRadius: 5, border: "1px dashed #93c5fd" }}>
                   <CardContent sx={{ textAlign: "center", py: 5 }}>
-                    <Typography fontWeight="900" variant="h6">No groups yet</Typography>
+                    <Avatar sx={{ background: neonGradient, mx: "auto", mb: 2 }}>
+                      <RocketLaunchIcon />
+                    </Avatar>
+                    <Typography fontWeight="900" variant="h6">No squads yet</Typography>
                     <Typography color="text.secondary" mb={2}>
-                      Create or join a group to start your P2P placement preparation journey.
+                      Create or join a squad to start your P2P placement preparation journey.
                     </Typography>
-                    <Button variant="contained" onClick={handleOpen} sx={{ borderRadius: 3 }}>
-                      Create First Group
+                    <Button variant="contained" onClick={handleOpen} sx={{ borderRadius: 3, fontWeight: 900, background: neonGradient }}>
+                      Launch First Squad
                     </Button>
                   </CardContent>
                 </Card>
@@ -526,10 +660,10 @@ function Dashboard() {
             )}
           </Grid>
 
-          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+          <Stack id="explore-groups" direction="row" justifyContent="space-between" alignItems="center" mb={2}>
             <Box>
               <Typography variant="h5" fontWeight="900">
-                Explore Groups
+                Explore Squads
               </Typography>
               <Typography color="text.secondary">Find active communities and request access.</Typography>
             </Box>
@@ -546,29 +680,24 @@ function Dashboard() {
       </Box>
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 5 } }}>
-        <DialogTitle sx={{ fontWeight: 900 }}>Create New P2P Group</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 900 }}>Launch New P2P Squad</DialogTitle>
 
         <DialogContent>
           <TextField
             fullWidth
-            label="Group Title"
-            placeholder="Example: DSA, Aptitude, DBMS"
+            label="Squad Title"
+            placeholder="Example: DSA Warriors, Aptitude Sprint, DBMS Masters"
             value={form.title}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                title: e.target.value,
-              })
-            }
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
             sx={{ mt: 2 }}
           />
 
           <Paper sx={{ mt: 2, p: 2, borderRadius: 4, bgcolor: "#f8fafc" }}>
             <Typography fontWeight="900" mb={0.5}>
-              Description Pointers
+              Squad Mission Points
             </Typography>
             <Typography variant="body2" color="text.secondary" mb={2}>
-              Add short points such as goals, schedule, topics, and rules for the group.
+              Add short points such as goals, schedule, topics, and rules for the squad.
             </Typography>
 
             <Stack spacing={1.5}>
@@ -581,19 +710,12 @@ function Dashboard() {
                 >
                   <TextField
                     fullWidth
-                    label={`Pointer ${index + 1}`}
+                    label={`Mission Point ${index + 1}`}
                     placeholder="Example: Daily DSA practice at 8 PM"
                     value={point}
-                    onChange={(event) =>
-                      updateDescriptionPointer(index, event.target.value)
-                    }
+                    onChange={(event) => updateDescriptionPointer(index, event.target.value)}
                   />
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    onClick={() => removeDescriptionPointer(index)}
-                    sx={{ borderRadius: 3 }}
-                  >
+                  <Button variant="outlined" color="error" onClick={() => removeDescriptionPointer(index)} sx={{ borderRadius: 3 }}>
                     Remove
                   </Button>
                 </Stack>
@@ -601,16 +723,15 @@ function Dashboard() {
             </Stack>
 
             <Button sx={{ mt: 2, borderRadius: 3 }} variant="outlined" onClick={addDescriptionPointer}>
-              + Add Pointer
+              + Add Mission Point
             </Button>
           </Paper>
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={handleClose} sx={{ borderRadius: 3 }}>Cancel</Button>
-
-          <Button variant="contained" onClick={handleCreateGroup} sx={{ borderRadius: 3, fontWeight: 800 }}>
-            Create Group
+          <Button variant="contained" onClick={handleCreateGroup} sx={{ borderRadius: 3, fontWeight: 900, background: neonGradient }}>
+            Launch Squad
           </Button>
         </DialogActions>
       </Dialog>
@@ -623,11 +744,11 @@ function Dashboard() {
         PaperProps={{ sx: { borderRadius: 5 } }}
       >
         <DialogTitle sx={{ fontWeight: 900 }}>
-          {selectedDescriptionGroup?.title || "Group Description"}
+          {selectedDescriptionGroup?.title || "Squad Mission"}
         </DialogTitle>
         <DialogContent>
           <Typography color="text.secondary" mb={1}>
-            Group description pointers
+            Squad mission points
           </Typography>
           {renderDescriptionPointersInModal(selectedDescriptionGroup?.description || "")}
         </DialogContent>
@@ -637,9 +758,9 @@ function Dashboard() {
             <Button
               variant="contained"
               onClick={() => handleOpenGroup(selectedDescriptionGroup)}
-              sx={{ borderRadius: 3, fontWeight: 800 }}
+              sx={{ borderRadius: 3, fontWeight: 900, background: neonGradient }}
             >
-              Open Workspace
+              Enter Arena
             </Button>
           )}
         </DialogActions>
