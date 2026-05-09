@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import api from "../api";
 
 import {
+  Avatar,
   Box,
   Button,
   Card,
@@ -17,6 +18,13 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import VideoCallIcon from "@mui/icons-material/VideoCall";
+
+const panelCard = {
+  borderRadius: 5,
+  border: "1px solid rgba(148, 163, 184, 0.18)",
+  boxShadow: "0 18px 45px rgba(15, 23, 42, 0.08)",
+};
 
 function MeetingsPanel({ groupId, isGroupCreator = false }) {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -147,32 +155,42 @@ function MeetingsPanel({ groupId, isGroupCreator = false }) {
 
   return (
     <Stack spacing={3}>
-      <Card sx={{ borderRadius: 4 }}>
-        <CardContent>
+      <Card sx={{ ...panelCard, background: "linear-gradient(135deg, #0f172a, #2563eb)" }}>
+        <CardContent sx={{ color: "white", p: 3 }}>
           <Stack
             direction={{ xs: "column", sm: "row" }}
             justifyContent="space-between"
             alignItems={{ xs: "stretch", sm: "center" }}
             spacing={2}
           >
-            <Box>
-              <Typography variant="h5" fontWeight="bold">
-                Meetings
-              </Typography>
-              <Typography color="text.secondary">
-                Start or schedule Jitsi meetings for group discussions, mock interviews, and screen sharing.
-              </Typography>
-            </Box>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar sx={{ bgcolor: "rgba(255,255,255,0.18)", color: "white" }}>
+                <VideoCallIcon />
+              </Avatar>
+              <Box>
+                <Typography variant="h5" fontWeight="900">
+                  P2P Meetings
+                </Typography>
+                <Typography sx={{ color: "rgba(255,255,255,0.78)" }}>
+                  Start mock interviews, group discussions, and screen-sharing sessions.
+                </Typography>
+              </Box>
+            </Stack>
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
               <Button
                 variant="outlined"
                 startIcon={<AddIcon />}
                 onClick={() => setShowForm((prev) => !prev)}
+                sx={{ color: "white", borderColor: "rgba(255,255,255,0.6)", borderRadius: 3 }}
               >
                 Schedule
               </Button>
-              <Button variant="contained" onClick={() => createMeeting(true)}>
+              <Button
+                variant="contained"
+                onClick={() => createMeeting(true)}
+                sx={{ bgcolor: "white", color: "#1d4ed8", fontWeight: 900, borderRadius: 3, "&:hover": { bgcolor: "#e0f2fe" } }}
+              >
                 Start Instant Meeting
               </Button>
             </Stack>
@@ -181,9 +199,9 @@ function MeetingsPanel({ groupId, isGroupCreator = false }) {
       </Card>
 
       {showForm && (
-        <Card sx={{ borderRadius: 4 }}>
-          <CardContent>
-            <Typography variant="h6" fontWeight="bold" mb={2}>
+        <Card sx={panelCard}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h6" fontWeight="900" mb={2}>
               Schedule Meeting
             </Typography>
 
@@ -216,8 +234,8 @@ function MeetingsPanel({ groupId, isGroupCreator = false }) {
             />
 
             <Stack direction="row" spacing={1} justifyContent="flex-end">
-              <Button onClick={resetForm}>Cancel</Button>
-              <Button variant="contained" onClick={() => createMeeting(false)}>
+              <Button onClick={resetForm} sx={{ borderRadius: 3 }}>Cancel</Button>
+              <Button variant="contained" onClick={() => createMeeting(false)} sx={{ borderRadius: 3, fontWeight: 800 }}>
                 Save Meeting
               </Button>
             </Stack>
@@ -225,27 +243,26 @@ function MeetingsPanel({ groupId, isGroupCreator = false }) {
         </Card>
       )}
 
-      <Card sx={{ borderRadius: 4 }}>
-        <CardContent>
-          <Typography variant="h6" fontWeight="bold" mb={1}>
-            Screen Sharing Support
-          </Typography>
-          <Typography color="text.secondary">
-            Meetings open in a new Jitsi tab for reliable camera, microphone, and screen sharing permissions.
-          </Typography>
-        </CardContent>
-      </Card>
+      <Paper sx={{ ...panelCard, p: 2.5, bgcolor: "#ecfeff" }}>
+        <Typography variant="h6" fontWeight="900" mb={0.5}>
+          Screen sharing ready
+        </Typography>
+        <Typography color="text.secondary">
+          Meetings open in a new Jitsi tab for reliable camera, microphone, and screen-sharing permissions.
+        </Typography>
+      </Paper>
 
       {meetings.length === 0 ? (
-        <Card sx={{ borderRadius: 4 }}>
-          <CardContent>
+        <Card sx={panelCard}>
+          <CardContent sx={{ textAlign: "center", py: 5 }}>
+            <Typography variant="h6" fontWeight="900">No meetings yet</Typography>
             <Typography color="text.secondary">
-              No meetings created yet. Start an instant meeting or schedule one for later.
+              Start an instant session or schedule your first P2P meeting.
             </Typography>
           </CardContent>
         </Card>
       ) : (
-        <Grid container spacing={2}>
+        <Grid container spacing={2.5}>
           {meetings.map((meeting) => {
             const creatorId = meeting.createdBy?._id || meeting.createdBy;
             const canEnd = creatorId === userId && meeting.status !== "ended";
@@ -253,21 +270,27 @@ function MeetingsPanel({ groupId, isGroupCreator = false }) {
 
             return (
               <Grid item xs={12} md={6} key={meeting._id}>
-                <Paper sx={{ p: 2.5, borderRadius: 4, height: "100%" }}>
+                <Paper sx={{ ...panelCard, p: 2.5, height: "100%" }}>
                   <Stack spacing={1.5}>
                     <Stack direction="row" justifyContent="space-between" spacing={1}>
-                      <Box>
-                        <Typography variant="h6" fontWeight="bold">
-                          {meeting.title}
-                        </Typography>
-                        <Typography color="text.secondary">
-                          {meeting.description || "No description"}
-                        </Typography>
-                      </Box>
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <Avatar sx={{ bgcolor: "#dbeafe", color: "#1d4ed8" }}>
+                          <VideoCallIcon />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="h6" fontWeight="900">
+                            {meeting.title}
+                          </Typography>
+                          <Typography color="text.secondary">
+                            {meeting.description || "No description"}
+                          </Typography>
+                        </Box>
+                      </Stack>
                       <Chip
                         size="small"
                         label={meeting.status}
                         color={getStatusColor(meeting.status)}
+                        sx={{ fontWeight: 800 }}
                       />
                     </Stack>
 
@@ -281,9 +304,11 @@ function MeetingsPanel({ groupId, isGroupCreator = false }) {
                     </Typography>
 
                     {isEnded ? (
-                      <Typography variant="body2" color="text.secondary">
-                        This meeting has ended. The meeting link is no longer available in the app.
-                      </Typography>
+                      <Paper sx={{ p: 1.5, borderRadius: 3, bgcolor: "#f1f5f9" }}>
+                        <Typography variant="body2" color="text.secondary">
+                          This meeting has ended. The meeting link is no longer available in the app.
+                        </Typography>
+                      </Paper>
                     ) : (
                       <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                         <Button
@@ -291,6 +316,7 @@ function MeetingsPanel({ groupId, isGroupCreator = false }) {
                           variant="contained"
                           startIcon={<OpenInNewIcon />}
                           onClick={() => openMeeting(meeting.meetingUrl)}
+                          sx={{ borderRadius: 3, fontWeight: 800 }}
                         >
                           Join Meeting
                         </Button>
@@ -299,6 +325,7 @@ function MeetingsPanel({ groupId, isGroupCreator = false }) {
                           variant="outlined"
                           startIcon={<ContentCopyIcon />}
                           onClick={() => copyMeetingLink(meeting.meetingUrl)}
+                          sx={{ borderRadius: 3, fontWeight: 800 }}
                         >
                           Copy Link
                         </Button>
@@ -310,6 +337,7 @@ function MeetingsPanel({ groupId, isGroupCreator = false }) {
                         variant="outlined"
                         color="error"
                         onClick={() => endMeeting(meeting._id)}
+                        sx={{ borderRadius: 3 }}
                       >
                         Mark as Ended
                       </Button>
@@ -320,6 +348,7 @@ function MeetingsPanel({ groupId, isGroupCreator = false }) {
                         variant="outlined"
                         color="error"
                         onClick={() => deleteMeeting(meeting._id)}
+                        sx={{ borderRadius: 3 }}
                       >
                         Delete Meeting Detail
                       </Button>
