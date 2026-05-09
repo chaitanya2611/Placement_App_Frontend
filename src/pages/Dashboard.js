@@ -22,11 +22,9 @@ import {
   Divider,
   Paper,
   Avatar,
-  LinearProgress,
 } from "@mui/material";
 
 import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PsychologyIcon from "@mui/icons-material/Psychology";
@@ -47,12 +45,12 @@ const softCard = {
   },
 };
 
-const glassCard = {
-  borderRadius: 5,
-  bgcolor: "rgba(255,255,255,0.14)",
-  color: "white",
-  backdropFilter: "blur(14px)",
-  border: "1px solid rgba(255,255,255,0.18)",
+const exploreStatCard = {
+  p: 2,
+  borderRadius: 4,
+  bgcolor: "white",
+  border: "1px solid rgba(148, 163, 184, 0.18)",
+  boxShadow: "0 12px 30px rgba(15, 23, 42, 0.07)",
 };
 
 function Dashboard() {
@@ -267,16 +265,17 @@ function Dashboard() {
     navigate("/login");
   };
 
-  const totalMyMcqs = myGroups.reduce((sum, group) => sum + (group.stats?.mcqCount || 0), 0);
-  const totalMyResources = myGroups.reduce((sum, group) => sum + (group.stats?.resourceCount || 0), 0);
-  const totalMembers = myGroups.reduce(
-    (sum, group) => sum + (group.stats?.membersCount || group.members?.length || 0),
-    0,
-  );
-  const momentumScore = Math.min(
-    100,
-    myGroups.length * 20 + totalMyMcqs * 2 + totalMyResources * 3,
-  );
+  const exploreStats = {
+    totalGroups: allGroups.length,
+    totalMembers: allGroups.reduce(
+      (sum, group) => sum + (group.stats?.membersCount || group.members?.length || 0),
+      0,
+    ),
+    joinableGroups: allGroups.filter(
+      (group) => !isCreator(group) && !isMember(group) && !hasPendingRequest(group),
+    ).length,
+    activeMissions: allGroups.filter((group) => getDescriptionList(group.description).length > 0).length,
+  };
 
   const questCards = [
     {
@@ -343,51 +342,34 @@ function Dashboard() {
 
           {renderDescriptionSummary(group)}
 
-          <Divider sx={{ my: 2 }} />
-
-          <Grid container spacing={1.2}>
-            <Grid item xs={6} sm={variant === "my" ? 3 : 6}>
-              <Paper sx={{ p: 1.25, borderRadius: 3, bgcolor: "#f8fafc" }}>
-                <Typography fontWeight={900}>{memberCount}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Members
-                </Typography>
-              </Paper>
-            </Grid>
-
-            {variant === "my" && (
-              <>
-                <Grid item xs={6} sm={3}>
+          {variant === "explore" && (
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Grid container spacing={1.2}>
+                <Grid item xs={6}>
+                  <Paper sx={{ p: 1.25, borderRadius: 3, bgcolor: "#f8fafc" }}>
+                    <Typography fontWeight={900}>{memberCount}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Members
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={6}>
                   <Paper sx={{ p: 1.25, borderRadius: 3, bgcolor: "#eff6ff" }}>
-                    <Typography fontWeight={900}>{stats.mcqCount || 0}</Typography>
+                    <Typography fontWeight={900}>{getDescriptionList(group.description).length}</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      MCQs
+                      Missions
                     </Typography>
                   </Paper>
                 </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Paper sx={{ p: 1.25, borderRadius: 3, bgcolor: "#ecfdf5" }}>
-                    <Typography fontWeight={900}>{stats.resourceCount || 0}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Resources
-                    </Typography>
-                  </Paper>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Paper sx={{ p: 1.25, borderRadius: 3, bgcolor: "#fdf4ff" }}>
-                    <Typography fontWeight={900}>P2P</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Arena
-                    </Typography>
-                  </Paper>
-                </Grid>
-              </>
-            )}
-          </Grid>
+              </Grid>
+            </>
+          )}
 
           {variant === "my" && (
             <>
-              <Typography variant="body2" color="text.secondary" mt={2}>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="body2" color="text.secondary">
                 {stats.lastActivityText || "Group created"}
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -501,7 +483,7 @@ function Dashboard() {
             />
 
             <Grid container spacing={3} alignItems="center" sx={{ position: "relative" }}>
-              <Grid item xs={12} md={7}>
+              <Grid item xs={12} md={8}>
                 <Chip
                   icon={<AutoAwesomeIcon />}
                   label="Your placement preparation arena"
@@ -510,7 +492,7 @@ function Dashboard() {
                 <Typography variant="h3" fontWeight="900" sx={{ fontSize: { xs: 34, md: 52 }, letterSpacing: -1 }}>
                   Prep with your squad. Win your placement game.
                 </Typography>
-                <Typography sx={{ mt: 1.5, color: "rgba(255,255,255,0.84)", maxWidth: 720, fontSize: 17 }}>
+                <Typography sx={{ mt: 1.5, color: "rgba(255,255,255,0.84)", maxWidth: 760, fontSize: 17 }}>
                   prep2place turns group study into a placement mission with chats, MCQs, quizzes, meetings, resources, and coding practice in one exciting workspace.
                 </Typography>
 
@@ -537,59 +519,6 @@ function Dashboard() {
                   >
                     Explore Squads
                   </Button>
-                </Stack>
-              </Grid>
-
-              <Grid item xs={12} md={5}>
-                <Stack spacing={1.5}>
-                  <Paper sx={{ ...glassCard, p: 2.2 }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                      <Box>
-                        <Typography fontWeight="900">P2P Momentum</Typography>
-                        <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.72)" }}>
-                          Your preparation activity meter
-                        </Typography>
-                      </Box>
-                      <Avatar sx={{ bgcolor: "rgba(255,255,255,0.18)", color: "white" }}>
-                        <EmojiEventsIcon />
-                      </Avatar>
-                    </Stack>
-                    <LinearProgress
-                      variant="determinate"
-                      value={momentumScore}
-                      sx={{ height: 10, borderRadius: 6, bgcolor: "rgba(255,255,255,0.18)", "& .MuiLinearProgress-bar": { bgcolor: "#facc15" } }}
-                    />
-                    <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.8)" }}>
-                      {momentumScore}% powered up
-                    </Typography>
-                  </Paper>
-
-                  <Grid container spacing={1.5}>
-                    <Grid item xs={6}>
-                      <Paper sx={{ ...glassCard, p: 2 }}>
-                        <Typography variant="h4" fontWeight="900">{myGroups.length}</Typography>
-                        <Typography variant="body2">My Squads</Typography>
-                      </Paper>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Paper sx={{ ...glassCard, p: 2 }}>
-                        <Typography variant="h4" fontWeight="900">{allGroups.length}</Typography>
-                        <Typography variant="body2">Open Squads</Typography>
-                      </Paper>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Paper sx={{ ...glassCard, p: 2 }}>
-                        <Typography variant="h4" fontWeight="900">{totalMyMcqs}</Typography>
-                        <Typography variant="body2">MCQs</Typography>
-                      </Paper>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Paper sx={{ ...glassCard, p: 2 }}>
-                        <Typography variant="h4" fontWeight="900">{totalMembers}</Typography>
-                        <Typography variant="body2">Teammates</Typography>
-                      </Paper>
-                    </Grid>
-                  </Grid>
                 </Stack>
               </Grid>
             </Grid>
@@ -667,6 +596,33 @@ function Dashboard() {
               <Typography color="text.secondary">Find active communities and request access.</Typography>
             </Box>
           </Stack>
+
+          <Grid container spacing={2} mb={3}>
+            <Grid item xs={6} md={3}>
+              <Paper sx={exploreStatCard}>
+                <Typography variant="h5" fontWeight="900">{exploreStats.totalGroups}</Typography>
+                <Typography variant="body2" color="text.secondary">Open squads</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={6} md={3}>
+              <Paper sx={exploreStatCard}>
+                <Typography variant="h5" fontWeight="900">{exploreStats.totalMembers}</Typography>
+                <Typography variant="body2" color="text.secondary">Total members</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={6} md={3}>
+              <Paper sx={exploreStatCard}>
+                <Typography variant="h5" fontWeight="900">{exploreStats.joinableGroups}</Typography>
+                <Typography variant="body2" color="text.secondary">Joinable squads</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={6} md={3}>
+              <Paper sx={exploreStatCard}>
+                <Typography variant="h5" fontWeight="900">{exploreStats.activeMissions}</Typography>
+                <Typography variant="body2" color="text.secondary">Active missions</Typography>
+              </Paper>
+            </Grid>
+          </Grid>
 
           <Grid container spacing={3}>
             {allGroups.map((group) => (
