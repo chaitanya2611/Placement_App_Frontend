@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import api from "../api";
 
 import {
+  Avatar,
   Box,
   Button,
   Card,
@@ -20,8 +21,15 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import LinkIcon from "@mui/icons-material/Link";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import FolderSpecialIcon from "@mui/icons-material/FolderSpecial";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
+
+const panelCard = {
+  borderRadius: 5,
+  border: "1px solid rgba(148, 163, 184, 0.18)",
+  boxShadow: "0 18px 45px rgba(15, 23, 42, 0.08)",
+};
 
 const allowedFileTypes = [
   "application/pdf",
@@ -193,27 +201,33 @@ function ResourcesPanel({ groupId, userId }) {
 
   return (
     <Stack spacing={3}>
-      <Card sx={{ borderRadius: 4 }}>
-        <CardContent>
+      <Card sx={{ ...panelCard, background: "linear-gradient(135deg, #0f172a, #059669)" }}>
+        <CardContent sx={{ color: "white", p: 3 }}>
           <Stack
             direction={{ xs: "column", sm: "row" }}
             justifyContent="space-between"
             alignItems={{ xs: "stretch", sm: "center" }}
             spacing={2}
           >
-            <Box>
-              <Typography variant="h5" fontWeight="bold">
-                Resources
-              </Typography>
-              <Typography color="text.secondary">
-                Share PDFs, documents, images, links, and interview preparation material.
-              </Typography>
-            </Box>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar sx={{ bgcolor: "rgba(255,255,255,0.18)", color: "white" }}>
+                <FolderSpecialIcon />
+              </Avatar>
+              <Box>
+                <Typography variant="h5" fontWeight="900">
+                  P2P Resources
+                </Typography>
+                <Typography sx={{ color: "rgba(255,255,255,0.78)" }}>
+                  Share notes, sheets, PDFs, images, links, and interview prep material.
+                </Typography>
+              </Box>
+            </Stack>
 
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => setShowForm((prev) => !prev)}
+              sx={{ bgcolor: "white", color: "#047857", fontWeight: 900, borderRadius: 3, "&:hover": { bgcolor: "#dcfce7" } }}
             >
               Add Resource
             </Button>
@@ -222,9 +236,9 @@ function ResourcesPanel({ groupId, userId }) {
       </Card>
 
       {showForm && (
-        <Card sx={{ borderRadius: 4 }}>
-          <CardContent component="form" onSubmit={handleSubmit}>
-            <Typography variant="h6" fontWeight="bold" mb={2}>
+        <Card sx={panelCard}>
+          <CardContent component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
+            <Typography variant="h6" fontWeight="900" mb={2}>
               Add Resource
             </Typography>
 
@@ -233,6 +247,7 @@ function ResourcesPanel({ groupId, userId }) {
                 variant={mode === "file" ? "contained" : "outlined"}
                 startIcon={<UploadFileIcon />}
                 onClick={() => setMode("file")}
+                sx={{ borderRadius: 3, fontWeight: 800 }}
               >
                 File
               </Button>
@@ -240,6 +255,7 @@ function ResourcesPanel({ groupId, userId }) {
                 variant={mode === "link" ? "contained" : "outlined"}
                 startIcon={<LinkIcon />}
                 onClick={() => setMode("link")}
+                sx={{ borderRadius: 3, fontWeight: 800 }}
               >
                 Link
               </Button>
@@ -266,8 +282,8 @@ function ResourcesPanel({ groupId, userId }) {
             />
 
             {mode === "file" ? (
-              <>
-                <Button component="label" variant="outlined" startIcon={<UploadFileIcon />}>
+              <Paper sx={{ p: 2, borderRadius: 3, bgcolor: "#f8fafc", border: "1px dashed #93c5fd" }}>
+                <Button component="label" variant="outlined" startIcon={<UploadFileIcon />} sx={{ borderRadius: 3 }}>
                   Select File
                   <input
                     hidden
@@ -284,7 +300,7 @@ function ResourcesPanel({ groupId, userId }) {
                     Selected: {form.file.name} ({formatFileSize(form.file.size)})
                   </Typography>
                 )}
-              </>
+              </Paper>
             ) : (
               <TextField
                 fullWidth
@@ -298,8 +314,8 @@ function ResourcesPanel({ groupId, userId }) {
             )}
 
             <Stack direction="row" spacing={1} justifyContent="flex-end" mt={2}>
-              <Button onClick={resetForm}>Cancel</Button>
-              <Button type="submit" variant="contained" disabled={loading}>
+              <Button onClick={resetForm} sx={{ borderRadius: 3 }}>Cancel</Button>
+              <Button type="submit" variant="contained" disabled={loading} sx={{ borderRadius: 3, fontWeight: 800 }}>
                 Save Resource
               </Button>
             </Stack>
@@ -308,31 +324,30 @@ function ResourcesPanel({ groupId, userId }) {
       )}
 
       {resources.length === 0 ? (
-        <Card sx={{ borderRadius: 4 }}>
-          <CardContent>
+        <Card sx={panelCard}>
+          <CardContent sx={{ textAlign: "center", py: 5 }}>
+            <Typography variant="h6" fontWeight="900">No resources yet</Typography>
             <Typography color="text.secondary">
-              No resources shared yet. Add notes, PDFs, links, or study sheets for this group.
+              Add notes, PDFs, links, or study sheets for this P2P group.
             </Typography>
           </CardContent>
         </Card>
       ) : (
-        <Grid container spacing={2}>
+        <Grid container spacing={2.5}>
           {resources.map((resource) => {
             const fileTypeLabel = getFileTypeLabel(resource);
 
             return (
               <Grid item xs={12} md={6} key={resource._id}>
-                <Paper sx={{ p: 2.5, borderRadius: 4, height: "100%" }}>
+                <Paper sx={{ ...panelCard, p: 2.5, height: "100%" }}>
                   <Stack spacing={1.5}>
                     <Stack direction="row" justifyContent="space-between" spacing={1}>
-                      <Stack direction="row" spacing={1.5} alignItems="center">
-                        {resource.resourceType === "link" ? (
-                          <LinkIcon color="primary" />
-                        ) : (
-                          <InsertDriveFileIcon color="primary" />
-                        )}
-                        <Box>
-                          <Typography fontWeight="bold">{resource.title}</Typography>
+                      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+                        <Avatar sx={{ bgcolor: "#dcfce7", color: "#047857" }}>
+                          {resource.resourceType === "link" ? <LinkIcon /> : <InsertDriveFileIcon />}
+                        </Avatar>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography fontWeight="900" noWrap>{resource.title}</Typography>
                           <Typography variant="caption" color="text.secondary">
                             Added by {resource.uploadedBy?.name || "Unknown"}
                           </Typography>
@@ -359,6 +374,7 @@ function ResourcesPanel({ groupId, userId }) {
                         size="small"
                         label={fileTypeLabel}
                         color={getFileChipColor(fileTypeLabel)}
+                        sx={{ fontWeight: 800 }}
                       />
                       {resource.fileName && <Chip size="small" label={resource.fileName} />}
                       {resource.fileSize > 0 && (
@@ -367,11 +383,12 @@ function ResourcesPanel({ groupId, userId }) {
                     </Stack>
 
                     <Button
-                      variant="outlined"
+                      variant="contained"
                       href={resource.resourceType === "link" ? resource.linkUrl : resource.fileUrl}
                       target="_blank"
                       rel="noreferrer"
                       fullWidth
+                      sx={{ borderRadius: 3, fontWeight: 800 }}
                     >
                       {resource.resourceType === "link" ? "Open Link" : "Open / Download"}
                     </Button>
