@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import api from "../api";
 
 import {
+  Avatar,
   Box,
   Button,
   Card,
@@ -17,6 +18,14 @@ import {
 } from "@mui/material";
 
 import AddIcon from "@mui/icons-material/Add";
+import CodeIcon from "@mui/icons-material/Code";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+
+const panelCard = {
+  borderRadius: 5,
+  border: "1px solid rgba(148, 163, 184, 0.18)",
+  boxShadow: "0 18px 45px rgba(15, 23, 42, 0.08)",
+};
 
 const emptyTestCase = {
   input: "",
@@ -175,19 +184,24 @@ function CodingPanel({ groupId }) {
 
     return (
       <Stack spacing={3}>
-        <Card sx={{ borderRadius: 4 }}>
-          <CardContent>
+        <Card sx={{ ...panelCard, background: "linear-gradient(135deg, #0f172a, #0ea5e9)" }}>
+          <CardContent sx={{ p: 3, color: "white" }}>
             <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={2}>
-              <Box>
-                <Chip label={activeProblem.topic || "General"} color="primary" size="small" sx={{ mb: 1 }} />
-                <Typography variant="h5" fontWeight="bold">
-                  {activeProblem.title}
-                </Typography>
-                <Typography color="text.secondary" sx={{ whiteSpace: "pre-wrap" }} mt={1}>
-                  {activeProblem.description}
-                </Typography>
-              </Box>
-              <Button variant="outlined" onClick={closeProblem}>
+              <Stack direction="row" spacing={2} alignItems="flex-start">
+                <Avatar sx={{ bgcolor: "rgba(255,255,255,0.18)", color: "white" }}>
+                  <CodeIcon />
+                </Avatar>
+                <Box>
+                  <Chip label={activeProblem.topic || "General"} size="small" sx={{ mb: 1, bgcolor: "rgba(255,255,255,0.18)", color: "white", fontWeight: 800 }} />
+                  <Typography variant="h5" fontWeight="900">
+                    {activeProblem.title}
+                  </Typography>
+                  <Typography sx={{ whiteSpace: "pre-wrap", color: "rgba(255,255,255,0.78)" }} mt={1}>
+                    {activeProblem.description}
+                  </Typography>
+                </Box>
+              </Stack>
+              <Button variant="contained" onClick={closeProblem} sx={{ bgcolor: "white", color: "#0284c7", borderRadius: 3, fontWeight: 900, "&:hover": { bgcolor: "#e0f2fe" } }}>
                 Back to Problems
               </Button>
             </Stack>
@@ -195,13 +209,14 @@ function CodingPanel({ groupId }) {
         </Card>
 
         {activeProblem.userSubmission && (
-          <Card sx={{ borderRadius: 4 }}>
-            <CardContent>
-              <Typography fontWeight="bold">Latest Submission</Typography>
+          <Card sx={panelCard}>
+            <CardContent sx={{ p: 2.5 }}>
+              <Typography fontWeight="900">Latest Submission</Typography>
               <Stack direction="row" spacing={1} mt={1} flexWrap="wrap">
                 <Chip
                   label={activeProblem.userSubmission.status}
                   color={resultColor(activeProblem.userSubmission.status)}
+                  sx={{ fontWeight: 900 }}
                 />
                 <Chip
                   label={`${activeProblem.userSubmission.passedTests}/${activeProblem.userSubmission.totalTests} tests passed`}
@@ -211,13 +226,23 @@ function CodingPanel({ groupId }) {
           </Card>
         )}
 
-        <Grid container spacing={2}>
+        <Grid container spacing={2.5}>
           <Grid item xs={12} md={7}>
-            <Card sx={{ borderRadius: 4, height: "100%" }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight="bold" mb={1}>
-                  Python Code Editor
-                </Typography>
+            <Card sx={{ ...panelCard, height: "100%" }}>
+              <CardContent sx={{ p: 2.5 }}>
+                <Stack direction="row" spacing={1} alignItems="center" mb={1.5}>
+                  <Avatar sx={{ bgcolor: "#e0f2fe", color: "#0284c7" }}>
+                    <CodeIcon />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6" fontWeight="900">
+                      Python Code Editor
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Write Python 3 solution and run visible tests before submitting.
+                    </Typography>
+                  </Box>
+                </Stack>
                 <TextField
                   fullWidth
                   multiline
@@ -229,14 +254,18 @@ function CodingPanel({ groupId }) {
                       fontFamily: "Consolas, Monaco, monospace",
                       fontSize: 14,
                       alignItems: "flex-start",
+                      bgcolor: "#0f172a",
+                      color: "#e2e8f0",
+                      borderRadius: 3,
+                      "& textarea": { color: "#e2e8f0" },
                     },
                   }}
                 />
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1} mt={2}>
-                  <Button variant="outlined" onClick={runPreview} disabled={loadingRun || loadingSubmit}>
+                  <Button variant="outlined" startIcon={<PlayArrowIcon />} onClick={runPreview} disabled={loadingRun || loadingSubmit} sx={{ borderRadius: 3, fontWeight: 800 }}>
                     {loadingRun ? "Running..." : "Run Visible Tests"}
                   </Button>
-                  <Button variant="contained" onClick={submitCode} disabled={loadingRun || loadingSubmit}>
+                  <Button variant="contained" onClick={submitCode} disabled={loadingRun || loadingSubmit} sx={{ borderRadius: 3, fontWeight: 900 }}>
                     {loadingSubmit ? "Submitting..." : "Submit Solution"}
                   </Button>
                 </Stack>
@@ -246,20 +275,20 @@ function CodingPanel({ groupId }) {
 
           <Grid item xs={12} md={5}>
             <Stack spacing={2}>
-              <Card sx={{ borderRadius: 4 }}>
-                <CardContent>
-                  <Typography variant="h6" fontWeight="bold" mb={1}>
+              <Card sx={panelCard}>
+                <CardContent sx={{ p: 2.5 }}>
+                  <Typography variant="h6" fontWeight="900" mb={1}>
                     Test Cases
                   </Typography>
                   <Typography variant="body2" color="text.secondary" mb={2}>
-                    Run executes visible tests. Submit executes both visible and hidden tests using the Piston Python API.
+                    Run executes visible tests. Submit executes both visible and hidden tests.
                   </Typography>
 
                   {visibleTests.map((testCase, index) => (
                     <Paper key={testCase._id || index} sx={{ p: 1.5, borderRadius: 3, mb: 1.5, bgcolor: "#f8fafc" }}>
                       <Stack spacing={1}>
                         <Stack direction="row" spacing={1} alignItems="center">
-                          <Typography fontWeight="bold">Test {index + 1}</Typography>
+                          <Typography fontWeight="900">Test {index + 1}</Typography>
                           {testCase.isHidden && <Chip size="small" label="Hidden" />}
                         </Stack>
                         {!testCase.isHidden && (
@@ -277,13 +306,13 @@ function CodingPanel({ groupId }) {
               </Card>
 
               {runResult && (
-                <Card sx={{ borderRadius: 4 }}>
-                  <CardContent>
+                <Card sx={panelCard}>
+                  <CardContent sx={{ p: 2.5 }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-                      <Typography variant="h6" fontWeight="bold">
+                      <Typography variant="h6" fontWeight="900">
                         Execution Result
                       </Typography>
-                      <Chip label={runResult.status || runResult.message} color={resultColor(runResult.status || runResult.message)} />
+                      <Chip label={runResult.status || runResult.message} color={resultColor(runResult.status || runResult.message)} sx={{ fontWeight: 900 }} />
                     </Stack>
                     <Typography variant="body2" color="text.secondary" mt={1}>
                       Passed {runResult.passedTests || 0} / {runResult.totalTests || 0} tests
@@ -294,12 +323,8 @@ function CodingPanel({ groupId }) {
                         <Paper key={result.testNumber} sx={{ p: 1.5, borderRadius: 3, bgcolor: "#f8fafc" }}>
                           <Stack spacing={0.75}>
                             <Stack direction="row" spacing={1} alignItems="center">
-                              <Typography fontWeight="bold">Test {result.testNumber}</Typography>
-                              <Chip
-                                size="small"
-                                label={result.passed ? "Passed" : "Failed"}
-                                color={result.passed ? "success" : "error"}
-                              />
+                              <Typography fontWeight="900">Test {result.testNumber}</Typography>
+                              <Chip size="small" label={result.passed ? "Passed" : "Failed"} color={result.passed ? "success" : "error"} />
                               {result.hidden && <Chip size="small" label="Hidden" />}
                             </Stack>
                             {!result.hidden && (
@@ -332,86 +357,53 @@ function CodingPanel({ groupId }) {
 
   return (
     <Stack spacing={3}>
-      <Card sx={{ borderRadius: 4 }}>
-        <CardContent>
+      <Card sx={{ ...panelCard, background: "linear-gradient(135deg, #0f172a, #0ea5e9)" }}>
+        <CardContent sx={{ p: 3, color: "white" }}>
           <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={2}>
-            <Box>
-              <Typography variant="h5" fontWeight="bold">
-                Python Coding Practice
-              </Typography>
-              <Typography color="text.secondary">
-                Create and solve Python coding problems inside this group.
-              </Typography>
-            </Box>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setShowForm((prev) => !prev)}
-            >
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar sx={{ bgcolor: "rgba(255,255,255,0.18)", color: "white" }}>
+                <CodeIcon />
+              </Avatar>
+              <Box>
+                <Typography variant="h5" fontWeight="900">
+                  P2P Python Coding
+                </Typography>
+                <Typography sx={{ color: "rgba(255,255,255,0.78)" }}>
+                  Create and solve Python coding problems inside this group.
+                </Typography>
+              </Box>
+            </Stack>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setShowForm((prev) => !prev)} sx={{ bgcolor: "white", color: "#0284c7", borderRadius: 3, fontWeight: 900, "&:hover": { bgcolor: "#e0f2fe" } }}>
               Add Problem
             </Button>
           </Stack>
         </CardContent>
       </Card>
 
-      <Card sx={{ borderRadius: 4 }}>
-        <CardContent>
-          <Typography variant="h6" fontWeight="bold">
-            Python Execution Connected
-          </Typography>
-          <Typography color="text.secondary" mt={1}>
-            Run and Submit now execute Python through the backend using the Piston execution API.
-          </Typography>
-        </CardContent>
-      </Card>
+      <Paper sx={{ ...panelCard, p: 2.5, bgcolor: "#ecfeff" }}>
+        <Typography variant="h6" fontWeight="900">
+          Python Execution
+        </Typography>
+        <Typography color="text.secondary" mt={0.5}>
+          Run and Submit execute Python through your configured backend execution provider.
+        </Typography>
+      </Paper>
 
       {showForm && (
-        <Card sx={{ borderRadius: 4 }}>
-          <CardContent component="form" onSubmit={createProblem}>
-            <Typography variant="h6" fontWeight="bold" mb={2}>
+        <Card sx={panelCard}>
+          <CardContent component="form" onSubmit={createProblem} sx={{ p: 3 }}>
+            <Typography variant="h6" fontWeight="900" mb={2}>
               Create Coding Problem
             </Typography>
 
-            <TextField
-              fullWidth
-              label="Problem Title"
-              value={form.title}
-              onChange={(event) => setForm({ ...form, title: event.target.value })}
-              sx={{ mb: 2 }}
-            />
-
-            <TextField
-              fullWidth
-              label="Topic"
-              value={form.topic}
-              onChange={(event) => setForm({ ...form, topic: event.target.value })}
-              sx={{ mb: 2 }}
-            />
-
-            <TextField
-              fullWidth
-              multiline
-              rows={5}
-              label="Problem Description"
-              value={form.description}
-              onChange={(event) => setForm({ ...form, description: event.target.value })}
-              sx={{ mb: 2 }}
-            />
-
-            <TextField
-              fullWidth
-              multiline
-              rows={6}
-              label="Starter Code"
-              value={form.starterCode}
-              onChange={(event) => setForm({ ...form, starterCode: event.target.value })}
-              InputProps={{ sx: { fontFamily: "Consolas, Monaco, monospace" } }}
-              sx={{ mb: 2 }}
-            />
+            <TextField fullWidth label="Problem Title" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} sx={{ mb: 2 }} />
+            <TextField fullWidth label="Topic" value={form.topic} onChange={(event) => setForm({ ...form, topic: event.target.value })} sx={{ mb: 2 }} />
+            <TextField fullWidth multiline rows={5} label="Problem Description" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} sx={{ mb: 2 }} />
+            <TextField fullWidth multiline rows={6} label="Starter Code" value={form.starterCode} onChange={(event) => setForm({ ...form, starterCode: event.target.value })} InputProps={{ sx: { fontFamily: "Consolas, Monaco, monospace" } }} sx={{ mb: 2 }} />
 
             <Divider sx={{ my: 2 }} />
 
-            <Typography variant="h6" fontWeight="bold" mb={1}>
+            <Typography variant="h6" fontWeight="900" mb={1}>
               Test Cases
             </Typography>
 
@@ -420,36 +412,14 @@ function CodingPanel({ groupId }) {
                 <Paper key={index} sx={{ p: 2, borderRadius: 3, bgcolor: "#f8fafc" }}>
                   <Stack spacing={1.5}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center">
-                      <Typography fontWeight="bold">Test Case {index + 1}</Typography>
-                      <Button color="error" size="small" onClick={() => removeTestCase(index)}>
+                      <Typography fontWeight="900">Test Case {index + 1}</Typography>
+                      <Button color="error" size="small" onClick={() => removeTestCase(index)} sx={{ borderRadius: 3 }}>
                         Remove
                       </Button>
                     </Stack>
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={2}
-                      label="Input"
-                      value={testCase.input}
-                      onChange={(event) => updateTestCase(index, "input", event.target.value)}
-                    />
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={2}
-                      label="Expected Output"
-                      value={testCase.expectedOutput}
-                      onChange={(event) => updateTestCase(index, "expectedOutput", event.target.value)}
-                    />
-                    <TextField
-                      select
-                      fullWidth
-                      label="Visibility"
-                      value={testCase.isHidden ? "hidden" : "visible"}
-                      onChange={(event) =>
-                        updateTestCase(index, "isHidden", event.target.value === "hidden")
-                      }
-                    >
+                    <TextField fullWidth multiline rows={2} label="Input" value={testCase.input} onChange={(event) => updateTestCase(index, "input", event.target.value)} />
+                    <TextField fullWidth multiline rows={2} label="Expected Output" value={testCase.expectedOutput} onChange={(event) => updateTestCase(index, "expectedOutput", event.target.value)} />
+                    <TextField select fullWidth label="Visibility" value={testCase.isHidden ? "hidden" : "visible"} onChange={(event) => updateTestCase(index, "isHidden", event.target.value === "hidden")}>
                       <MenuItem value="visible">Visible Sample Test</MenuItem>
                       <MenuItem value="hidden">Hidden Test</MenuItem>
                     </TextField>
@@ -459,12 +429,12 @@ function CodingPanel({ groupId }) {
             </Stack>
 
             <Stack direction="row" spacing={1} justifyContent="space-between" mt={2}>
-              <Button variant="outlined" onClick={addTestCase}>
+              <Button variant="outlined" onClick={addTestCase} sx={{ borderRadius: 3, fontWeight: 800 }}>
                 Add Test Case
               </Button>
               <Stack direction="row" spacing={1}>
-                <Button onClick={resetForm}>Cancel</Button>
-                <Button type="submit" variant="contained">
+                <Button onClick={resetForm} sx={{ borderRadius: 3 }}>Cancel</Button>
+                <Button type="submit" variant="contained" sx={{ borderRadius: 3, fontWeight: 900 }}>
                   Save Problem
                 </Button>
               </Stack>
@@ -474,33 +444,34 @@ function CodingPanel({ groupId }) {
       )}
 
       {problems.length === 0 ? (
-        <Card sx={{ borderRadius: 4 }}>
-          <CardContent>
+        <Card sx={panelCard}>
+          <CardContent sx={{ textAlign: "center", py: 5 }}>
+            <Avatar sx={{ bgcolor: "#e0f2fe", color: "#0284c7", mx: "auto", mb: 2 }}>
+              <CodeIcon />
+            </Avatar>
+            <Typography variant="h6" fontWeight="900">
+              No coding problems yet
+            </Typography>
             <Typography color="text.secondary">
-              No coding problems yet. Add the first Python problem for this group.
+              Add the first Python problem for this P2P group.
             </Typography>
           </CardContent>
         </Card>
       ) : (
-        <Grid container spacing={2}>
+        <Grid container spacing={2.5}>
           {problems.map((problem) => (
             <Grid item xs={12} md={6} key={problem._id}>
-              <Card sx={{ borderRadius: 4, height: "100%" }}>
-                <CardContent>
+              <Card sx={{ ...panelCard, height: "100%" }}>
+                <CardContent sx={{ p: 2.5 }}>
                   <Stack spacing={1.5}>
                     <Stack direction="row" justifyContent="space-between" spacing={1}>
                       <Box>
-                        <Chip size="small" label={problem.topic || "General"} color="primary" sx={{ mb: 1 }} />
-                        <Typography variant="h6" fontWeight="bold">
+                        <Chip size="small" label={problem.topic || "General"} color="primary" sx={{ mb: 1, fontWeight: 800 }} />
+                        <Typography variant="h6" fontWeight="900">
                           {problem.title}
                         </Typography>
                       </Box>
-                      {problem.userSubmission && (
-                        <Chip
-                          label={problem.userSubmission.status}
-                          color={resultColor(problem.userSubmission.status)}
-                        />
-                      )}
+                      {problem.userSubmission && <Chip label={problem.userSubmission.status} color={resultColor(problem.userSubmission.status)} sx={{ fontWeight: 900 }} />}
                     </Stack>
                     <Typography color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>
                       {problem.description.slice(0, 160)}{problem.description.length > 160 ? "..." : ""}
@@ -512,7 +483,7 @@ function CodingPanel({ groupId }) {
                     <Typography variant="caption" color="text.secondary">
                       Created by {problem.createdBy?.name || "Unknown"}
                     </Typography>
-                    <Button variant="contained" onClick={() => openProblem(problem._id)}>
+                    <Button variant="contained" onClick={() => openProblem(problem._id)} sx={{ borderRadius: 3, fontWeight: 900 }}>
                       Solve Problem
                     </Button>
                   </Stack>
