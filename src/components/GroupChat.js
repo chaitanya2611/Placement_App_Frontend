@@ -18,7 +18,6 @@ import {
   MenuItem,
   Tooltip,
   Popover,
-  Chip,
 } from "@mui/material";
 
 import SendIcon from "@mui/icons-material/Send";
@@ -35,7 +34,7 @@ const reactionOptions = ["👍", "❤️", "😂", "🔥", "👏", "😮"];
 
 function GroupChat({ group, embedded = false }) {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
