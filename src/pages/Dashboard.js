@@ -28,7 +28,6 @@ import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PsychologyIcon from "@mui/icons-material/Psychology";
-import CodeIcon from "@mui/icons-material/Code";
 
 const appGradient = "linear-gradient(135deg, #020617 0%, #1d4ed8 42%, #06b6d4 100%)";
 const neonGradient = "linear-gradient(135deg, #2563eb, #7c3aed, #06b6d4)";
@@ -36,6 +35,10 @@ const neonGradient = "linear-gradient(135deg, #2563eb, #7c3aed, #06b6d4)";
 const softCard = {
   borderRadius: 5,
   height: "100%",
+  width: "100%",
+  minWidth: 0,
+  display: "flex",
+  overflow: "hidden",
   border: "1px solid rgba(148, 163, 184, 0.18)",
   boxShadow: "0 18px 45px rgba(15, 23, 42, 0.08)",
   transition: "0.25s ease",
@@ -185,7 +188,7 @@ function Dashboard() {
     if (!description?.trim()) return [];
     return description
       .split("\n")
-      .map((point) => point.replace(/^[-•]\s*/, "").trim())
+      .map((point) => point.replace(/^[-â€¢]\s*/, "").trim())
       .filter(Boolean);
   };
 
@@ -201,7 +204,7 @@ function Dashboard() {
     }
 
     return (
-      <Stack direction="row" spacing={1} alignItems="center" mt={1.5} flexWrap="wrap">
+      <Stack direction="row" spacing={1} useFlexGap alignItems="center" mt={1.5} flexWrap="wrap">
         <Chip
           size="small"
           label={`${pointers.length} mission points`}
@@ -291,9 +294,9 @@ function Dashboard() {
       color: "#7c3aed",
     },
     {
-      icon: <CodeIcon />,
-      title: "Code together",
-      text: "Enable coding in serious groups and prepare like a real placement team.",
+      icon: <AutoAwesomeIcon />,
+      title: "Interview together",
+      text: "Run mock interviews, review answers, and improve with focused peer feedback.",
       color: "#0891b2",
     },
   ];
@@ -304,14 +307,32 @@ function Dashboard() {
 
     return (
       <Card sx={softCard}>
-        <CardContent sx={{ p: 3 }}>
-          <Stack direction="row" justifyContent="space-between" spacing={1} alignItems="flex-start">
-            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-              <Avatar sx={{ background: neonGradient, fontWeight: 900 }}>
+        <CardContent
+          sx={{
+            p: { xs: 2.25, sm: 3 },
+            width: "100%",
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            justifyContent="space-between"
+            spacing={1.5}
+            alignItems={{ xs: "stretch", sm: "flex-start" }}
+            sx={{ minWidth: 0 }}
+          >
+            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
+              <Avatar sx={{ background: neonGradient, fontWeight: 900, flexShrink: 0 }}>
                 {group.title?.charAt(0)?.toUpperCase() || "P"}
               </Avatar>
-              <Box sx={{ minWidth: 0 }}>
-                <Typography variant="h6" fontWeight="900" noWrap>
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography
+                  variant="h6"
+                  fontWeight="900"
+                  sx={{ lineHeight: 1.25, overflowWrap: "anywhere" }}
+                >
                   {group.title}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -320,7 +341,14 @@ function Dashboard() {
               </Box>
             </Stack>
 
-            <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
+            <Stack
+              direction="row"
+              spacing={1}
+              useFlexGap
+              flexWrap="wrap"
+              justifyContent={{ xs: "flex-start", sm: "flex-end" }}
+              sx={{ flexShrink: 0, maxWidth: { sm: "45%" } }}
+            >
               {isCreator(group) ? (
                 <Chip label="Captain" color="primary" size="small" sx={{ fontWeight: 800 }} />
               ) : isMember(group) ? (
@@ -378,32 +406,34 @@ function Dashboard() {
             </>
           )}
 
+          <Box sx={{ flexGrow: 1, minHeight: 16 }} />
+
           {variant === "my" ? (
             <Button
               fullWidth
               variant="contained"
-              sx={{ mt: 2, borderRadius: 3, py: 1.1, fontWeight: 900, background: neonGradient }}
+              sx={{ py: 1.1, borderRadius: 3, fontWeight: 900, background: neonGradient }}
               onClick={() => handleOpenGroup(group)}
             >
               Enter Arena
             </Button>
           ) : isCreator(group) ? (
-            <Button fullWidth variant="outlined" disabled sx={{ mt: 2, borderRadius: 3 }}>
+            <Button fullWidth variant="outlined" disabled sx={{ borderRadius: 3 }}>
               Your Squad
             </Button>
           ) : isMember(group) ? (
-            <Button fullWidth variant="outlined" color="success" disabled sx={{ mt: 2, borderRadius: 3 }}>
+            <Button fullWidth variant="outlined" color="success" disabled sx={{ borderRadius: 3 }}>
               Already Joined
             </Button>
           ) : hasPendingRequest(group) ? (
-            <Button fullWidth variant="outlined" disabled sx={{ mt: 2, borderRadius: 3 }}>
+            <Button fullWidth variant="outlined" disabled sx={{ borderRadius: 3 }}>
               Request Pending
             </Button>
           ) : (
             <Button
               fullWidth
               variant="contained"
-              sx={{ mt: 2, borderRadius: 3, py: 1.1, fontWeight: 900, background: neonGradient }}
+              sx={{ py: 1.1, borderRadius: 3, fontWeight: 900, background: neonGradient }}
               onClick={() => handleJoinRequest(group._id)}
             >
               Join Squad
@@ -493,14 +523,14 @@ function Dashboard() {
                   Prep with your squad. Win your placement game.
                 </Typography>
                 <Typography sx={{ mt: 1.5, color: "rgba(255,255,255,0.84)", maxWidth: 760, fontSize: 17 }}>
-                  prep2place turns group study into a placement mission with chats, MCQs, quizzes, meetings, resources, and coding practice in one exciting workspace.
+                  prep2place turns group study into a placement mission with chats, MCQs, quizzes, meetings, resources, and interview practice in one exciting workspace.
                 </Typography>
 
                 <Stack direction="row" spacing={1} mt={2} flexWrap="wrap">
                   <Chip label="DSA Squads" sx={{ bgcolor: "rgba(255,255,255,0.16)", color: "white" }} />
                   <Chip label="MCQ Battles" sx={{ bgcolor: "rgba(255,255,255,0.16)", color: "white" }} />
                   <Chip label="Quiz Challenges" sx={{ bgcolor: "rgba(255,255,255,0.16)", color: "white" }} />
-                  <Chip label="Meet + Code" sx={{ bgcolor: "rgba(255,255,255,0.16)", color: "white" }} />
+                  <Chip label="Meet + Review" sx={{ bgcolor: "rgba(255,255,255,0.16)", color: "white" }} />
                 </Stack>
 
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} mt={3}>
@@ -526,7 +556,7 @@ function Dashboard() {
 
           <Grid container spacing={2.5} mb={4}>
             {questCards.map((quest) => (
-              <Grid item xs={12} md={4} key={quest.title}>
+              <Grid item xs={12} sm={6} lg={4} key={quest.title} sx={{ display: "flex", minWidth: 0 }}>
                 <Paper
                   sx={{
                     p: 2.5,
@@ -581,7 +611,7 @@ function Dashboard() {
               </Grid>
             ) : (
               myGroups.map((group) => (
-                <Grid item xs={12} md={6} key={group._id}>
+                <Grid item xs={12} md={6} key={group._id} sx={{ display: "flex", minWidth: 0 }}>
                   {renderGroupCard(group, "my")}
                 </Grid>
               ))
@@ -626,7 +656,7 @@ function Dashboard() {
 
           <Grid container spacing={3}>
             {allGroups.map((group) => (
-              <Grid item xs={12} md={4} key={group._id}>
+              <Grid item xs={12} sm={6} lg={4} key={group._id} sx={{ display: "flex", minWidth: 0 }}>
                 {renderGroupCard(group, "explore")}
               </Grid>
             ))}
@@ -728,3 +758,4 @@ function Dashboard() {
 }
 
 export default Dashboard;
+
