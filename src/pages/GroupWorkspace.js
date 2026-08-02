@@ -6,24 +6,19 @@ import ResourcesPanel from "../components/ResourcesPanel";
 import McqPanel from "../components/McqPanel";
 import QuizPanel from "../components/QuizPanel";
 import MeetingsPanel from "../components/MeetingsPanel";
-import CodingPanel from "../components/CodingPanel";
 import MembersPanel from "../components/MembersPanel";
-import LeaderboardPanel from "../components/LeaderboardPanel";
 
 import {
   AppBar,
   Avatar,
   Box,
   Button,
-  Checkbox,
-  Chip,
   CircularProgress,
   Container,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   IconButton,
   Paper,
   Stack,
@@ -48,7 +43,6 @@ function GroupWorkspace() {
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
-    codingEnabled: false,
   });
 
   const isCreator = (group?.creator?._id || group?.creator) === userId;
@@ -86,7 +80,6 @@ function GroupWorkspace() {
     setEditForm({
       title: group.title || "",
       description: group.description || "",
-      codingEnabled: Boolean(group.codingEnabled),
     });
     setEditOpen(true);
   };
@@ -96,7 +89,6 @@ function GroupWorkspace() {
     setEditForm({
       title: "",
       description: "",
-      codingEnabled: false,
     });
   };
 
@@ -107,11 +99,11 @@ function GroupWorkspace() {
     }
 
     try {
-      await api.put(`/groups/${groupId}`, editForm);
-      const updatedGroup = await loadGroup();
-      if (!updatedGroup?.codingEnabled && activeTab === 4) {
-        setActiveTab(0);
-      }
+      await api.put(`/groups/${groupId}`, {
+        title: editForm.title,
+        description: editForm.description,
+      });
+      await loadGroup();
       handleCloseEdit();
     } catch (error) {
       alert(error.response?.data?.message || "Failed to update group");
@@ -136,10 +128,8 @@ function GroupWorkspace() {
 
   if (!group) return null;
 
-  const codingEnabled = Boolean(group.codingEnabled);
-  const leaderboardTabIndex = codingEnabled ? 5 : 4;
-  const membersTabIndex = codingEnabled ? 6 : 5;
-  const resourcesTabIndex = codingEnabled ? 7 : 6;
+  const membersTabIndex = 4;
+  const resourcesTabIndex = 5;
 
   return (
     <Box
@@ -174,15 +164,12 @@ function GroupWorkspace() {
             </Avatar>
 
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography fontWeight="900" noWrap>
-                  {group.title}
-                </Typography>
-                {codingEnabled && <Chip size="small" label="Coding ON" color="info" />}
-              </Stack>
+              <Typography fontWeight="900" noWrap>
+                {group.title}
+              </Typography>
 
               <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.72)" }}>
-                prep2place workspace • {group.members?.length || 0} members
+                prep2place workspace â€¢ {group.members?.length || 0} members
               </Typography>
             </Box>
 
@@ -233,8 +220,6 @@ function GroupWorkspace() {
             <Tab label="MCQs" />
             <Tab label="Quizzes" />
             <Tab label="Meetings" />
-            {codingEnabled && <Tab label="Coding" />}
-            <Tab label="Leaderboard" />
             <Tab label="Members" />
             <Tab label="Resources" />
           </Tabs>
@@ -271,18 +256,6 @@ function GroupWorkspace() {
         {activeTab === 3 && (
           <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
             <MeetingsPanel groupId={groupId} isGroupCreator={isCreator} />
-          </Box>
-        )}
-
-        {codingEnabled && activeTab === 4 && (
-          <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
-            <CodingPanel groupId={groupId} />
-          </Box>
-        )}
-
-        {activeTab === leaderboardTabIndex && (
-          <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
-            <LeaderboardPanel groupId={groupId} />
           </Box>
         )}
 
@@ -327,21 +300,6 @@ function GroupWorkspace() {
             }
             sx={{ mt: 2 }}
           />
-          <FormControlLabel
-            sx={{ mt: 2 }}
-            control={
-              <Checkbox
-                checked={editForm.codingEnabled}
-                onChange={(event) =>
-                  setEditForm({ ...editForm, codingEnabled: event.target.checked })
-                }
-              />
-            }
-            label="Enable Coding Interface for this group"
-          />
-          <Typography variant="body2" color="text.secondary">
-            Coding is optional. Existing groups will show the Coding tab only after this is enabled by the group creator.
-          </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={handleCloseEdit} sx={{ borderRadius: 3 }}>Cancel</Button>
@@ -355,3 +313,4 @@ function GroupWorkspace() {
 }
 
 export default GroupWorkspace;
+
