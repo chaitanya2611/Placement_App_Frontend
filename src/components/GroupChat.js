@@ -28,9 +28,9 @@ import CloseIcon from "@mui/icons-material/Close";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import AddReactionIcon from "@mui/icons-material/AddReaction";
-import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutlined";
 
-const reactionOptions = ["👍", "❤️", "😂", "🔥", "👏", "😮"];
+const reactionOptions = ["ðŸ‘", "â¤ï¸", "ðŸ˜‚", "ðŸ”¥", "ðŸ‘", "ðŸ˜®"];
 
 function GroupChat({ group, embedded = false }) {
   const navigate = useNavigate();
@@ -483,7 +483,7 @@ function GroupChat({ group, embedded = false }) {
                             textAlign: "right",
                           }}
                         >
-                          {message.isEdited ? "edited · " : ""}
+                          {message.isEdited ? "edited Â· " : ""}
                           {new Date(message.createdAt).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -772,3 +772,4 @@ function GroupChat({ group, embedded = false }) {
 }
 
 export default GroupChat;
+
