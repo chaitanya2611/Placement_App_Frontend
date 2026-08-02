@@ -562,6 +562,8 @@ function Dashboard() {
                     p: 2.5,
                     borderRadius: 5,
                     height: "100%",
+                    width: "100%",
+                    boxSizing: "border-box",
                     border: "1px solid rgba(148,163,184,0.18)",
                     boxShadow: "0 18px 45px rgba(15,23,42,0.08)",
                     transition: "0.25s ease",
