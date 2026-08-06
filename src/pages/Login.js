@@ -110,6 +110,12 @@ function Login() {
                 helperText={errors.password}
               />
 
+              <Box textAlign="right" mt={1}>
+                <Link component={RouterLink} to="/forgot-password">
+                  Forgot password?
+                </Link>
+              </Box>
+
               <Button
                 fullWidth
                 type="submit"
