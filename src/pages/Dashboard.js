@@ -148,13 +148,13 @@ function Dashboard() {
     }
   };
 
-  const handleJoinRequest = async (groupId) => {
+  const handleJoinGroup = async (groupId) => {
     try {
       await api.post(`/groups/${groupId}/request`);
-      alert("Join request sent successfully");
-      await fetchAllGroups();
+      alert("Joined group successfully");
+      await loadData();
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to send request");
+      alert(error.response?.data?.message || "Failed to join group");
     }
   };
 
@@ -164,13 +164,6 @@ function Dashboard() {
     return group.members?.some((member) => {
       const memberId = member?._id || member;
       return memberId === userId;
-    });
-  };
-
-  const hasPendingRequest = (group) => {
-    return group.joinRequests?.some((request) => {
-      const requestUserId = request.user?._id || request.user;
-      return requestUserId === userId && request.status === "pending";
     });
   };
 
@@ -188,7 +181,7 @@ function Dashboard() {
     if (!description?.trim()) return [];
     return description
       .split("\n")
-      .map((point) => point.replace(/^[-â€¢]\s*/, "").trim())
+      .map((point) => point.replace(/^[-Ã¢â‚¬Â¢]\s*/, "").trim())
       .filter(Boolean);
   };
 
@@ -275,7 +268,7 @@ function Dashboard() {
       0,
     ),
     joinableGroups: allGroups.filter(
-      (group) => !isCreator(group) && !isMember(group) && !hasPendingRequest(group),
+      (group) => !isCreator(group) && !isMember(group),
     ).length,
     activeMissions: allGroups.filter((group) => getDescriptionList(group.description).length > 0).length,
   };
@@ -357,14 +350,6 @@ function Dashboard() {
                 <Chip label="Open Squad" size="small" sx={{ fontWeight: 800 }} />
               )}
 
-              {stats.pendingRequestsCount > 0 && (
-                <Chip
-                  label={`${stats.pendingRequestsCount} requests`}
-                  color="warning"
-                  size="small"
-                  sx={{ fontWeight: 800 }}
-                />
-              )}
             </Stack>
           </Stack>
 
@@ -425,16 +410,12 @@ function Dashboard() {
             <Button fullWidth variant="outlined" color="success" disabled sx={{ borderRadius: 3 }}>
               Already Joined
             </Button>
-          ) : hasPendingRequest(group) ? (
-            <Button fullWidth variant="outlined" disabled sx={{ borderRadius: 3 }}>
-              Request Pending
-            </Button>
           ) : (
             <Button
               fullWidth
               variant="contained"
               sx={{ py: 1.1, borderRadius: 3, fontWeight: 900, background: neonGradient }}
-              onClick={() => handleJoinRequest(group._id)}
+              onClick={() => handleJoinGroup(group._id)}
             >
               Join Squad
             </Button>
@@ -625,7 +606,7 @@ function Dashboard() {
               <Typography variant="h5" fontWeight="900">
                 Explore Squads
               </Typography>
-              <Typography color="text.secondary">Find active communities and request access.</Typography>
+              <Typography color="text.secondary">Find active communities and join instantly.</Typography>
             </Box>
           </Stack>
 
