@@ -169,7 +169,7 @@ function GroupWorkspace() {
               </Typography>
 
               <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.72)" }}>
-                prep2place workspace â€¢ {group.members?.length || 0} members
+                prep2place workspace Ã¢â‚¬Â¢ {group.members?.length || 0} members
               </Typography>
             </Box>
 
@@ -249,7 +249,7 @@ function GroupWorkspace() {
 
         {activeTab === 2 && (
           <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 2 }}>
-            <QuizPanel groupId={groupId} />
+            <QuizPanel groupId={groupId} isGroupCreator={isCreator} />
           </Box>
         )}
 
