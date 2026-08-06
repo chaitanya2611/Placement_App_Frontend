@@ -16,6 +16,12 @@ import {
   MenuItem,
   Paper,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
 } from "@mui/material";
@@ -42,13 +48,16 @@ const emptyQuestion = {
   negativeMarks: 0,
 };
 
-function QuizPanel({ groupId }) {
+function QuizPanel({ groupId, isGroupCreator = false }) {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userId = user?.id || user?._id;
 
   const [quizzes, setQuizzes] = useState([]);
   const [mcqs, setMcqs] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [showReports, setShowReports] = useState(false);
+  const [reports, setReports] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState(null);
   const [answers, setAnswers] = useState({});
   const [form, setForm] = useState({
@@ -81,6 +90,42 @@ function QuizPanel({ groupId }) {
     loadQuizzes();
     loadMcqs();
   }, [loadQuizzes, loadMcqs]);
+
+  const loadReports = async () => {
+    setReportsLoading(true);
+    try {
+      const res = await api.get(`/quizzes/${groupId}/reports`);
+      setReports(res.data.reports || []);
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to load quiz reports");
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  const toggleReports = async () => {
+    const nextValue = !showReports;
+    setShowReports(nextValue);
+    if (nextValue) await loadReports();
+  };
+
+  const downloadReports = async () => {
+    try {
+      const res = await api.get(`/quizzes/${groupId}/reports.csv`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: "text/csv;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "quiz-attendance-and-results.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to download quiz reports");
+    }
+  };
 
   const resetForm = () => {
     setForm({
@@ -451,17 +496,94 @@ function QuizPanel({ groupId }) {
                 </Typography>
               </Box>
             </Stack>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setShowForm((prev) => !prev)}
-              sx={{ bgcolor: "white", color: "#be185d", borderRadius: 3, fontWeight: 900, "&:hover": { bgcolor: "#fce7f3" } }}
-            >
-              Create Quiz
-            </Button>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              {isGroupCreator && (
+                <>
+                  <Button variant="outlined" onClick={toggleReports} sx={{ color: "white", borderColor: "rgba(255,255,255,0.65)", borderRadius: 3, fontWeight: 900 }}>
+                    {showReports ? "Hide Reports" : "Admin Reports"}
+                  </Button>
+                  <Button variant="outlined" onClick={downloadReports} sx={{ color: "white", borderColor: "rgba(255,255,255,0.65)", borderRadius: 3, fontWeight: 900 }}>
+                    Download CSV
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setShowForm((prev) => !prev)}
+                sx={{ bgcolor: "white", color: "#be185d", borderRadius: 3, fontWeight: 900, "&:hover": { bgcolor: "#fce7f3" } }}
+              >
+                Create Quiz
+              </Button>
+            </Stack>
           </Stack>
         </CardContent>
       </Card>
+
+      {isGroupCreator && showReports && (
+        <Card sx={panelCard}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={1} mb={2}>
+              <Box>
+                <Typography variant="h6" fontWeight="900">Quiz Attendance & Results</Typography>
+                <Typography color="text.secondary">Visible only to the group creator.</Typography>
+              </Box>
+              <Button variant="contained" onClick={downloadReports} sx={{ borderRadius: 3, fontWeight: 900 }}>
+                Download CSV
+              </Button>
+            </Stack>
+
+            {reportsLoading ? (
+              <LinearProgress />
+            ) : reports.length === 0 ? (
+              <Typography color="text.secondary">No quiz reports are available yet.</Typography>
+            ) : (
+              <Stack spacing={2.5}>
+                {reports.map((report) => (
+                  <Paper key={report.quiz.id} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 3, bgcolor: "#f8fafc", overflow: "hidden" }}>
+                    <Typography variant="h6" fontWeight="900">{report.quiz.title}</Typography>
+                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" my={1.5}>
+                      <Chip size="small" label={`${report.summary.attendedCount}/${report.summary.totalMembers} attended`} color="success" />
+                      <Chip size="small" label={`${report.summary.absentCount} absent`} color={report.summary.absentCount ? "warning" : "default"} />
+                      <Chip size="small" label={`${report.summary.attendancePercentage}% attendance`} />
+                      <Chip size="small" label={`${report.summary.averagePercentage}% average`} color="primary" />
+                    </Stack>
+                    <TableContainer sx={{ maxWidth: "100%" }}>
+                      <Table size="small" sx={{ minWidth: 720 }}>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 900 }}>Student</TableCell>
+                            <TableCell sx={{ fontWeight: 900 }}>Attendance</TableCell>
+                            <TableCell sx={{ fontWeight: 900 }}>Score</TableCell>
+                            <TableCell sx={{ fontWeight: 900 }}>Percentage</TableCell>
+                            <TableCell sx={{ fontWeight: 900 }}>Submitted</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {report.results.map((result) => (
+                            <TableRow key={result.user.id}>
+                              <TableCell>
+                                <Typography variant="body2" fontWeight="800">{result.user.name}</Typography>
+                                <Typography variant="caption" color="text.secondary">{result.user.email}</Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Chip size="small" label={result.attended ? "Present" : "Absent"} color={result.attended ? "success" : "warning"} />
+                              </TableCell>
+                              <TableCell>{result.attended ? `${result.score} / ${result.totalMarks}` : "â€”"}</TableCell>
+                              <TableCell>{result.attended ? `${result.percentage}%` : "â€”"}</TableCell>
+                              <TableCell>{result.submittedAt ? new Date(result.submittedAt).toLocaleString("en-IN") : "â€”"}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Paper>
+                ))}
+              </Stack>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {showForm && (
         <Card sx={panelCard}>
